@@ -1,0 +1,24 @@
+
+> sketch2spec@0.1.0 build
+> next build
+
+   ▲ Next.js 15.2.3
+   - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+unhandledRejection [Error: Cannot find module './548.js'
+Require stack:
+- C:\Projects\Sketch2Spec\.next\server\webpack-runtime.js
+- C:\Projects\Sketch2Spec\.next\server\pages\_document.js
+- C:\Projects\Sketch2Spec\node_modules\next\dist\server\require.js
+- C:\Projects\Sketch2Spec\node_modules\next\dist\server\load-components.js
+- C:\Projects\Sketch2Spec\node_modules\next\dist\build\utils.js
+- C:\Projects\Sketch2Spec\node_modules\next\dist\build\worker.js
+- C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\jest-worker\processChild.js] {
+  type: 'Error',
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}

@@ -1,0 +1,40 @@
+
+> sketch2spec@0.1.0 build
+> next build
+
+   ▲ Next.js 15.2.3
+   - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/9) ...
+   Generating static pages (2/9) 
+   Generating static pages (4/9) 
+   Generating static pages (6/9) 
+ ✓ Generating static pages (9/9)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    20.1 kB         159 kB
+├ ○ /_not-found                            977 B         102 kB
+├ ƒ /api/admin/provider-logs               141 B         101 kB
+├ ƒ /api/ai/generate                       141 B         101 kB
+├ ƒ /api/cloudinary/sign                   141 B         101 kB
+├ ○ /dashboard                           5.21 kB         144 kB
+├ ○ /preview                             4.43 kB         138 kB
+├ ƒ /sign-in/[[...sign-in]]               2.3 kB         138 kB
+└ ƒ /sign-up/[[...sign-up]]               2.3 kB         138 kB
++ First Load JS shared by all             101 kB
+  ├ chunks/4bd1b696-c0c3b276a853677c.js  53.2 kB
+  ├ chunks/684-686ad864c946ab44.js       45.3 kB
+  └ other shared chunks (total)          2.02 kB
+
+
+ƒ Middleware                             80.6 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

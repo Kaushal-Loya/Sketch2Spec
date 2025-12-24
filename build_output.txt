@@ -1,0 +1,70 @@
+
+> sketch2spec@0.1.0 build
+> next build
+
+   ▲ Next.js 15.2.3
+   - Environments: .env
+
+   Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy] Skipped not serializable cache item 'Compilation/modules|C:\Projects\Sketch2Spec\node_modules\next\dist\build\webpack\loaders\css-loader\src\index.js??ruleSet[1].rules[13].oneOf[10].use[2]!C:\Projects\Sketch2Spec\node_modules\next\dist\build\webpack\loaders\postcss-loader\src\index.js??ruleSet[1].rules[13].oneOf[10].use[3]!C:\Projects\Sketch2Spec\app\globals.css': No serializer registered for PostCSSSyntaxError
+<w> while serializing webpack/lib/cache/PackFileCacheStrategy.PackContentItems -> webpack/lib/NormalModule -> webpack/lib/ModuleBuildError -> PostCSSSyntaxError
+Failed to compile.
+
+./app/globals.css:33:5
+Syntax error: C:\Projects\Sketch2Spec\app\globals.css The `shadow-[0_8px_32px_0_rgba(0,` class does not exist. If `shadow-[0_8px_32px_0_rgba(0,` is a custom class, make sure it is defined within a `@layer` directive.
+
+ [90m 31 | [39m
+ [90m 32 | [39m  [33m.glass[39m [33m{[39m
+[1m[31m>[39m[22m[90m 33 | [39m    [36m@apply[39m bg-white/5 backdrop-blur-2xl border border-white/10 shadow-[33m[[39m[36m0_8px_32px_0_rgba[39m[36m(0, 0, 0, 0.3)[39m[33m][39m[33m;[39m
+ [90m    | [39m    [1m[31m^[39m[22m
+ [90m 34 | [39m  [33m}[39m
+ [90m 35 | [39m
+
+./app/globals.css
+Syntax error: C:\Projects\Sketch2Spec\app\globals.css The `shadow-[0_8px_32px_0_rgba(0,` class does not exist. If `shadow-[0_8px_32px_0_rgba(0,` is a custom class, make sure it is defined within a `@layer` directive. (33:5)
+
+ [90m 31 | [39m
+ [90m 32 | [39m  [33m.glass[39m [33m{[39m
+[1m[31m>[39m[22m[90m 33 | [39m    [36m@apply[39m bg-white/5 backdrop-blur-2xl border border-white/10 shadow-[33m[[39m[36m0_8px_32px_0_rgba[39m[36m(0, 0, 0, 0.3)[39m[33m][39m[33m;[39m
+ [90m    | [39m    [1m[31m^[39m[22m
+ [90m 34 | [39m  [33m}[39m
+ [90m 35 | [39m
+
+    at tryRunOrWebpackError (C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\webpack\bundle5.js:29:316142)
+    at __webpack_require_module__ (C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\webpack\bundle5.js:29:131548)
+    at __nested_webpack_require_161494__ (C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\webpack\bundle5.js:29:130983)
+    at C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\webpack\bundle5.js:29:131840
+    at symbolIterator (C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\neo-async\async.js:1:14444)
+    at done (C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\neo-async\async.js:1:14824)
+    at Hook.eval [as callAsync] (eval at create (C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\webpack\bundle5.js:14:9224), <anonymous>:15:1)
+    at Hook.CALL_ASYNC_DELEGATE [as _callAsync] (C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\webpack\bundle5.js:14:6378)
+    at C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\webpack\bundle5.js:29:130703
+    at symbolIterator (C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\neo-async\async.js:1:14402)
+-- inner error --
+Syntax error: C:\Projects\Sketch2Spec\app\globals.css The `shadow-[0_8px_32px_0_rgba(0,` class does not exist. If `shadow-[0_8px_32px_0_rgba(0,` is a custom class, make sure it is defined within a `@layer` directive. (33:5)
+
+ [90m 31 | [39m
+ [90m 32 | [39m  [33m.glass[39m [33m{[39m
+[1m[31m>[39m[22m[90m 33 | [39m    [36m@apply[39m bg-white/5 backdrop-blur-2xl border border-white/10 shadow-[33m[[39m[36m0_8px_32px_0_rgba[39m[36m(0, 0, 0, 0.3)[39m[33m][39m[33m;[39m
+ [90m    | [39m    [1m[31m^[39m[22m
+ [90m 34 | [39m  [33m}[39m
+ [90m 35 | [39m
+
+    at Object.<anonymous> (C:\Projects\Sketch2Spec\node_modules\next\dist\build\webpack\loaders\css-loader\src\index.js??ruleSet[1].rules[13].oneOf[10].use[2]!C:\Projects\Sketch2Spec\node_modules\next\dist\build\webpack\loaders\postcss-loader\src\index.js??ruleSet[1].rules[13].oneOf[10].use[3]!C:\Projects\Sketch2Spec\app\globals.css:1:7)
+    at C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\webpack\bundle5.js:29:962742
+    at Hook.eval [as call] (eval at create (C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\webpack\bundle5.js:14:9002), <anonymous>:7:1)
+    at Hook.CALL_DELEGATE [as _call] (C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\webpack\bundle5.js:14:6272)
+    at C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\webpack\bundle5.js:29:131581
+    at tryRunOrWebpackError (C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\webpack\bundle5.js:29:316096)
+    at __webpack_require_module__ (C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\webpack\bundle5.js:29:131548)
+    at __nested_webpack_require_161494__ (C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\webpack\bundle5.js:29:130983)
+    at C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\webpack\bundle5.js:29:131840
+    at symbolIterator (C:\Projects\Sketch2Spec\node_modules\next\dist\compiled\neo-async\async.js:1:14444)
+
+Generated code for C:\Projects\Sketch2Spec\node_modules\next\dist\build\webpack\loaders\css-loader\src\index.js??ruleSet[1].rules[13].oneOf[10].use[2]!C:\Projects\Sketch2Spec\node_modules\next\dist\build\webpack\loaders\postcss-loader\src\index.js??ruleSet[1].rules[13].oneOf[10].use[3]!C:\Projects\Sketch2Spec\app\globals.css
+
+Import trace for requested module:
+./app/globals.css
+
+
+> Build failed because of webpack errors

@@ -1,0 +1,12 @@
+
+> sketch2spec@0.1.0 dev
+> next dev
+
+ ⚠ Port 3000 is in use, trying 3001 instead.
+   ▲ Next.js 15.2.3
+   - Local:        http://localhost:3001
+   - Network:      http://172.25.48.1:3001
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 3.3s
