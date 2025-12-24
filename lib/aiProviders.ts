@@ -232,10 +232,10 @@ function ensurePreviewAssignment(code: string): string {
 // ----------------------------------------------------
 // Gemini (vision-enabled): Image → React UI generation
 // ----------------------------------------------------
-export async function generateWithGemini(imageUrl: string) {
+export async function generateWithGemini(imageUrl: string, model?: string) {
   const API_KEY = process.env.GEMINI_API_KEY
-  // Use Gemini 3 Flash for best speed/performance balance
-  const MODEL = process.env.GEMINI_MODEL || 'gemini-3-flash'
+  // Use Gemini 1.5 Flash for best speed/performance balance
+  const MODEL = (model && model.startsWith('gemini-')) ? model : (process.env.GEMINI_MODEL || 'gemini-1.5-flash')
 
   if (!API_KEY) {
     throw new Error(

@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 
       try {
         const { generateWithGemini } = await import('@/lib/aiProviders')
-        const text = await generateWithGemini(imageUrl, model || 'Gemini')
+        const text = await generateWithGemini(imageUrl)
         logProviderEvent({ id: requestId, provider: 'Gemini', fallbackUsed: false, success: true })
         return NextResponse.json({ code: text, provider: 'Gemini', fallbackUsed: false })
       } catch (pErr: any) {
