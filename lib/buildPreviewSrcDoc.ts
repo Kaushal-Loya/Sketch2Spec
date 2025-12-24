@@ -16,6 +16,7 @@ export function buildPreviewSrcDoc(generatedCode: string) {
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@babel/standalone@7.23.5/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide-react@0.474.0/dist/umd/lucide-react.js"></script>
 
   <style>
     html,body,#root{height:100%;margin:0;padding:0;background:#f8fafc}
@@ -56,11 +57,58 @@ export function buildPreviewSrcDoc(generatedCode: string) {
 ${safeCode}
   </script>
 
-  <!-- Render after Babel transformation -->
   <script>
+    // Create a fallback icon component for missing Lucide icons
+    const FallbackIcon = (props) => {
+      return React.createElement('div', { 
+        style: { 
+          width: props.size || 24, 
+          height: props.size || 24, 
+          border: '1px dashed #ccc',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '8px',
+          color: '#999',
+          borderRadius: '4px'
+        }
+      }, 'Icon');
+    };
+
+    // Proxy to handle missing Lucide icons gracefully
+    const createLucideProxy = (base) => {
+      return new Proxy(base || {}, {
+        get: (target, prop) => {
+          if (prop in target) return target[prop];
+          if (typeof prop === 'string' && prop[0] === prop[0].toUpperCase()) {
+            console.warn('⚠️ Icon "' + prop + '" not found on Lucide. Using fallback.');
+            return FallbackIcon;
+          }
+          return undefined;
+        }
+      });
+    };
+
+    // Global Lucide with Proxy
+    window.Lucide = createLucideProxy(window.Lucide || window.lucide || window.lucideReact);
+
+    // Polyfill require for Babel transformed code
+    window.require = function(moduleName) {
+      const globals = {
+        'react': window.React,
+        'react-dom': window.ReactDOM,
+        'lucide-react': window.Lucide
+      };
+      
+      if (globals[moduleName]) return globals[moduleName];
+      console.warn('⚠️ Module "' + moduleName + '" not found. Returning empty object.');
+      return {};
+    };
+
     console.log('=== Preview Initialization ===');
     console.log('React available?', !!window.React);
     console.log('ReactDOM available?', !!window.ReactDOM);
+    console.log('Lucide available?', !!window.Lucide);
     console.log('Babel available?', !!window.Babel);
     
     function renderPreview() {

@@ -17,16 +17,16 @@ async function retryWithBackoff<T>(
     } catch (err: any) {
       lastErr = err
       console.error(`Attempt ${i + 1} failed:`, err.message)
-      
+
       // If it's the last attempt, don't wait
       if (i === attempts - 1) {
         break
       }
-      
+
       const backoff = baseMs * Math.pow(2, i)
       const jitter = Math.floor(Math.random() * 100)
       const delay = backoff + jitter
-      
+
       console.log(`Retrying in ${delay}ms...`)
       await new Promise((r) => setTimeout(r, delay))
     }
@@ -46,71 +46,71 @@ function removeMarkdownFences(code: string): string {
   if (fenceMatch) {
     code = fenceMatch[1]
   }
-  
+
   // Remove any remaining fences
   code = code.replace(/^```(?:tsx|typescript|jsx|javascript|react)?\s*\n?/gm, '')
   code = code.replace(/\n?```\s*$/gm, '')
   code = code.replace(/```/g, '')
-  
+
   return code.trim()
 }
 
 function looksIncomplete(code: string) {
   const trimmed = code.trim()
-  
+
   // Must have some basic React/component structure
   // After sanitization, it should have React global or import
   if (!trimmed.includes("React") && !trimmed.includes("react")) {
     return true
   }
-  
+
   // Must have export default (before sanitization converts it)
   if (!trimmed.includes("export default") && !trimmed.includes("function") && !trimmed.includes("const")) {
     return true
   }
-  
+
   // Check for balanced braces
   const openBraces = (code.match(/{/g)?.length ?? 0)
   const closeBraces = (code.match(/}/g)?.length ?? 0)
-  
+
   if (openBraces !== closeBraces) {
     return true
   }
-  
+
   // Check if code ends abruptly (common incomplete patterns)
   const endsWithIncomplete = /[,{(\[]$/.test(trimmed)
   if (endsWithIncomplete) {
     return true
   }
-  
+
   // If it has JSX opening tags without closing tags, it's incomplete
   const jsxOpenTags = (code.match(/<[A-Z][A-Za-z0-9]*[^/>]*>/g)?.length ?? 0)
   const jsxCloseTags = (code.match(/<\/[A-Z][A-Za-z0-9]*>/g)?.length ?? 0)
   const jsxSelfClosing = (code.match(/<[A-Z][A-Za-z0-9]*[^>]*\/>/g)?.length ?? 0)
-  
+
   // Allow some tolerance for nested components
   if (jsxOpenTags > jsxCloseTags + jsxSelfClosing + 3) {
     return true
   }
-  
+
   return false
 }
 
 function sanitizeGeneratedCode(code: string) {
   // Ensure markdown is completely removed
   code = removeMarkdownFences(code)
-  
+
   // Remove TypeScript syntax that Babel in browser can't handle
   // Remove React.FC, React.FunctionComponent type annotations
   code = code.replace(/:\s*React\.FC\b/g, '')
   code = code.replace(/:\s*React\.FunctionComponent\b/g, '')
-  
+
   // Remove type annotations from function parameters
   code = code.replace(/\(\s*{\s*([^}]+)\s*}:\s*\{[^}]+\}\s*\)/g, '({ $1 })')
-  
+
   // Remove 'as const' assertions
   code = code.replace(/\s+as\s+const\b/g, '')
-  
+
   // Remove ONLY complex preview assignments (conditional/try-catch blocks)
   code = code.replace(
     /if\s*\(\s*typeof\s+window\s*!==\s*["']undefined["']\s*\)\s*\{[\s\S]*?window\.__PREVIEW_COMPONENT__[\s\S]*?\}/g,
@@ -134,55 +134,98 @@ function sanitizeGeneratedCode(code: string) {
 }
 
 function replaceImportsWithGlobals(code: string): string {
-  // Remove all import statements and replace with global destructuring
-  
-  // Extract what's being imported from React
-  const reactImports: string[] = []
-  const importRegex = /import\s+(?:React\s*,?\s*)?(?:\{([^}]+)\})?\s+from\s+['"]react['"]/g
-  
+  // 1. Extract what's being imported from React
+  const reactImports = new Set<string>()
+  const reactImportRegex = /import\s+(?:React\s*,?\s*)?(?:\{([^}]+)\})?\s+from\s+['"]react['"]/g
+
   let match
-  while ((match = importRegex.exec(code)) !== null) {
+  while ((match = reactImportRegex.exec(code)) !== null) {
     if (match[1]) {
-      // Extract named imports like { useState, useEffect }
-      const named = match[1].split(',').map(s => s.trim())
-      reactImports.push(...named)
+      match[1].split(',').forEach(s => reactImports.add(s.trim()))
     }
   }
-  
-  // Remove all React imports (including default imports)
-  code = code.replace(/import\s+React\s*,?\s*(?:\{[^}]*\})?\s*from\s+['"]react['"];?\s*/g, '')
-  code = code.replace(/import\s+\{[^}]+\}\s+from\s+['"]react['"];?\s*/g, '')
-  code = code.replace(/import\s+React\s+from\s+['"]react['"];?\s*/g, '')
-  
-  // Add global declarations at the top
-  let globals = 'const React = window.React;\n'
-  
-  if (reactImports.length > 0) {
-    const uniqueImports = [...new Set(reactImports)]
-    globals += `const { ${uniqueImports.join(', ')} } = React;\n`
+
+  // 2. Extract what's being imported from Lucide
+  const lucideImports = new Set<string>()
+  const lucideImportRegex = /import\s+(?:\{([^}]+)\})?\s+from\s+['"]lucide-react['"]/g
+
+  while ((match = lucideImportRegex.exec(code)) !== null) {
+    if (match[1]) {
+      match[1].split(',').forEach(s => lucideImports.add(s.trim()))
+    }
   }
-  
+
+  // 3. UNIVERSAL SCAN: Find any potential Lucide icons used in JSX but not imported
+  // Looks for <IconName ... /> pattern
+  const jsxIconRegex = /<([A-Z][a-zA-Z0-9]+)/g
+
+  // Also identify what's defined in the code to avoid redeclaring it
+  const definedInCode = new Set<string>()
+  const definitionRegex = /(?:const|function|class)\s+([A-Z][a-zA-Z0-9]+)/g
+  let dMatch
+  while ((dMatch = definitionRegex.exec(code)) !== null) {
+    definedInCode.add(dMatch[1])
+  }
+
+  while ((match = jsxIconRegex.exec(code)) !== null) {
+    const tagName = match[1]
+    // Filter out:
+    // 1. Common React names
+    // 2. Things already defined in the generated code itself (to avoid "Identifier already defined")
+    if (!['React', 'Fragment', 'Component'].includes(tagName) && !definedInCode.has(tagName)) {
+      lucideImports.add(tagName)
+    }
+  }
+
+  // Final cleanup of lucideImports to remove any empty strings or invalid tokens
+  const cleanLucideImports = Array.from(lucideImports)
+    .map(s => s.trim())
+    .filter(s => s.length > 0 && !s.includes(' '))
+
+  // 3. Remove ALL import statements (including multi-line)
+  // This is critical to prevent Babel from generating 'require' calls
+  code = code.replace(/import\s+[\s\S]*?from\s+['"][^'"]+['"];?\s*/g, '')
+
+  // 4. Add global declarations at the top
+  let globals = 'const React = window.React;\n'
+
+  if (reactImports.size > 0) {
+    const reactDestructuring = Array.from(reactImports)
+      .map(s => s.replace(/\s+as\s+/g, ': '))
+      .join(', ')
+    globals += `const { ${reactDestructuring} } = React;\n`
+  }
+
+  if (cleanLucideImports.length > 0) {
+    const lucideDestructuring = cleanLucideImports
+      .map(s => s.replace(/\s+as\s+/g, ': '))
+      .join(', ')
+    // Lucide is typically available as window.Lucide or window.lucide or window.lucideReact in UMD builds
+    globals += 'const Lucide = window.Lucide || window.lucide || window.lucideReact || {};\n'
+    globals += `const { ${lucideDestructuring} } = Lucide;\n`
+  }
+
   globals += '\n'
-  
+
   return globals + code
 }
 
 function ensurePreviewAssignment(code: string): string {
   // Extract the default export name
   const defaultExportMatch = code.match(/export\s+default\s+(?:function\s+)?([A-Z][A-Za-z0-9_]*)/m)
-  
+
   if (!defaultExportMatch) {
     throw new Error("No default export found in generated code")
   }
 
   const componentName = defaultExportMatch[1]
-  
+
   // Remove the export default statement since we're using globals
   code = code.replace(/export\s+default\s+[A-Z][A-Za-z0-9_]*;?\s*/g, '')
-  
+
   // Add preview assignment at the end
   const previewAssignment = `\n\nif (typeof window !== 'undefined') {\n  window.__PREVIEW_COMPONENT__ = ${componentName};\n}\n`
-  
+
   return code + previewAssignment
 }
 
@@ -342,17 +385,17 @@ Now, recreate the UI from the screenshot following all requirements above.`
     }
 
     code = sanitizeGeneratedCode(code)
-    
+
     console.log('=== AFTER SANITIZATION ===')
     console.log('First 500 chars:', code.substring(0, 500))
-    
+
     code = ensurePreviewAssignment(code)
-    
+
     console.log('=== FINAL CODE ===')
     console.log('Length:', code.length, 'chars')
     console.log('Has window.__PREVIEW_COMPONENT__?', code.includes('window.__PREVIEW_COMPONENT__'))
     console.log('Last 300 chars:', code.slice(-300))
-    
+
     return code
   })
 }

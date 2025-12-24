@@ -11,6 +11,7 @@ export default function PreviewPage() {
   const [srcDoc, setSrcDoc] = useState<string>("")
   const [copied, setCopied] = useState(false)
   const [viewMode, setViewMode] = useState<"desktop" | "tablet" | "mobile">("desktop")
+  const [isRegenerating, setIsRegenerating] = useState(false)
 
   useEffect(() => {
     try {
@@ -28,6 +29,37 @@ export default function PreviewPage() {
     navigator.clipboard.writeText(code || "")
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleRegenerate = async () => {
+    const imageUrl = sessionStorage.getItem("lastUploadedImageUrl")
+    if (!imageUrl) {
+      alert("Source image not found. Please re-upload from dashboard.")
+      return
+    }
+
+    setIsRegenerating(true)
+    try {
+      const res = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageUrl,
+          model: "gemini-flash-latest",
+        }),
+      })
+
+      const data = await res.json()
+      if (data.code) {
+        setCode(data.code)
+        setSrcDoc(buildPreviewSrcDoc(data.code))
+        sessionStorage.setItem("generatedPreviewCode", data.code)
+      }
+    } catch (err) {
+      console.error("Regeneration failed", err)
+    } finally {
+      setIsRegenerating(false)
+    }
   }
 
   if (!code) {
@@ -99,6 +131,15 @@ export default function PreviewPage() {
             </div>
 
             <div className="flex items-center gap-3">
+              <button
+                onClick={handleRegenerate}
+                disabled={isRegenerating}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-bold text-xs transition-all disabled:opacity-50"
+              >
+                <Zap className={`w-4 h-4 ${isRegenerating ? 'animate-spin' : ''}`} />
+                {isRegenerating ? "Regenerating..." : "Regenerate"}
+              </button>
+
               <button
                 onClick={handleCopy}
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs transition-all shadow-md ${copied ? "bg-green-600 text-white" : "bg-blue-600 text-white hover:bg-blue-700"

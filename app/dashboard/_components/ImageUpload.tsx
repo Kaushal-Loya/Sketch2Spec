@@ -76,6 +76,7 @@ export default function ImageUpload() {
 
       setGeneratedCode(aiJson.code)
       sessionStorage.setItem("generatedPreviewCode", aiJson.code)
+      sessionStorage.setItem("lastUploadedImageUrl", uploadJson.secure_url)
       setMessage({ text: "Synthesis complete.", type: 'success' })
 
     } catch (err: any) {
@@ -166,8 +167,8 @@ export default function ImageUpload() {
                       key={m.id}
                       onClick={() => setSelectedModel(m.id)}
                       className={`p-4 rounded-xl border transition-all text-left ${selectedModel === m.id
-                          ? 'bg-blue-600 border-blue-600 shadow-lg shadow-blue-100 text-white'
-                          : 'bg-white border-slate-100 hover:border-blue-200 text-slate-900'
+                        ? 'bg-blue-600 border-blue-600 shadow-lg shadow-blue-100 text-white'
+                        : 'bg-white border-slate-100 hover:border-blue-200 text-slate-900'
                         }`}
                     >
                       <p className="text-xs font-bold">{m.name}</p>
@@ -209,8 +210,8 @@ export default function ImageUpload() {
 
               {message && (
                 <div className={`p-5 rounded-xl border animate-fade-in flex items-center gap-3 ${message.type === 'error' ? 'bg-red-50 border-red-100 text-red-600' :
-                    message.type === 'success' ? 'bg-green-50 border-green-100 text-green-600' :
-                      'bg-blue-50 border-blue-100 text-blue-600'
+                  message.type === 'success' ? 'bg-green-50 border-green-100 text-green-600' :
+                    'bg-blue-50 border-blue-100 text-blue-600'
                   }`}>
                   {message.type === 'success' ? <CheckCircle className="w-4 h-4" /> :
                     message.type === 'error' ? <X className="w-4 h-4" /> :
