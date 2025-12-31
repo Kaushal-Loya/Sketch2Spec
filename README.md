@@ -54,12 +54,7 @@ The design-to-development handoff is slow and inefficient. As developers, we've 
 
    ```
 
-4. **Run database migrations** (if applicable)
-   ```bash
-   npm run db:push
-   ```
-
-5. **Start the development server**
+4. **Start the development server**
    ```bash
    npm run dev
    ```
@@ -76,7 +71,6 @@ The design-to-development handoff is slow and inefficient. As developers, we've 
 | React 18 | UI library |
 | TypeScript | Type safety and developer experience |
 | Clerk | User authentication and management |
-| PostgreSQL | Database with Drizzle ORM |
 | Google Gemini | Vision AI for wireframe-to-code generation |
 | Cloudinary | Image upload and storage |
 | Babel Standalone | Browser-based JSX transformation |
@@ -170,7 +164,6 @@ Sketch2Spec/
 │   ├── buildPreviewSrcDoc.ts         # Preview iframe builder
 │   └── utils.ts                      # Utility functions
 ├── middleware.ts                     # Clerk auth middleware
-├── drizzle.config.ts                 # Database config
 ├── tailwind.config.ts                # Tailwind config
 ├── next.config.ts                    # Next.js config
 └── package.json
@@ -282,10 +275,6 @@ npm run start
 
 # Lint code
 npm run lint
-
-# Database operations
-npm run db:push
-npm run db:studio
 ```
 
 ## Deployment
