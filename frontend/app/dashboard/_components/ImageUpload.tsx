@@ -107,10 +107,7 @@ export default function ImageUpload() {
                 <ScanLine className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-foreground tracking-widest uppercase font-mono">Input_Source</h2>
-                <div className="h-[2px] w-full bg-border mt-1">
-                  <div className="h-full w-1/3 bg-primary animate-pulse"></div>
-                </div>
+                <h2 className="text-lg font-bold text-foreground tracking-widest uppercase font-mono">Input Source</h2>
               </div>
             </div>
             {previewUrl && (

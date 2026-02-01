@@ -4,7 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Zap, LayoutGrid, Clock, Settings, FileText, LogOut, Cpu, Shield, Sun, Moon } from 'lucide-react'
-import { UserButton, useUser } from '@clerk/nextjs'
+import { signOut, useSession } from 'next-auth/react'
 import { useTheme } from "next-themes"
 
 const navItems = [
@@ -14,7 +14,7 @@ const navItems = [
 ]
 
 export default function Sidebar() {
-    const { user } = useUser()
+    const { data: session } = useSession()
     const pathname = usePathname()
     const { theme, setTheme } = useTheme()
     const [mounted, setMounted] = React.useState(false)
@@ -79,22 +79,24 @@ export default function Sidebar() {
                 </button>
 
                 <div className="flex items-center gap-3 px-2">
-                    <UserButton
-                        appearance={{
-                            elements: {
-                                avatarBox: "w-8 h-8 rounded-sm border border-primary/50"
-                            }
-                        }}
-                    />
-                    <Link href="/profile" className="flex flex-col hover:opacity-80 transition-opacity">
-                        <span className="text-xs font-bold text-foreground font-mono">
-                            {user?.username || user?.firstName || "User_Session"}
-                        </span>
-                        <span className="text-[10px] text-green-500 font-mono flex items-center gap-1">
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                            Online
-                        </span>
-                    </Link>
+                    {session?.user && (
+                        <>
+                            <div className="w-8 h-8 rounded-sm border border-primary/50 bg-primary/10 flex items-center justify-center text-xs font-bold">
+                                {session.user.name?.charAt(0) || '?'}
+                            </div>
+                            <Link href="/profile" className="flex flex-col hover:opacity-80 transition-opacity">
+                                <span className="text-xs font-bold text-foreground font-mono">
+                                    {session.user.name || "User_Session"}
+                                </span>
+                                <button
+                                    onClick={() => signOut()}
+                                    className="text-[10px] text-cyan-500 font-mono hover:text-cyan-400"
+                                >
+                                    Sign Out
+                                </button>
+                            </Link>
+                        </>
+                    )}
                 </div>
             </div>
         </aside>

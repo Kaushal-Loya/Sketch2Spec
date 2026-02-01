@@ -1,12 +1,12 @@
 "use client"
 
-import React, { useEffect, useState, useRef } from "react"
+import React, { useEffect, useState, useRef, Suspense } from "react"
 import { buildPreviewSrcDoc } from "@/lib/buildPreviewSrcDoc"
 import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { createClient } from "@supabase/supabase-js"
 import { Copy, ArrowLeft, Code2, Eye, Smartphone, Tablet, Monitor, CheckCircle, ChevronLeft, Zap, Box, X, Terminal, Maximize2, Minimize2, Cpu, Save, RotateCcw, Loader2, Pencil } from "lucide-react"
-import { UserButton, useAuth } from "@clerk/nextjs"
+import { useSession } from "next-auth/react"
 import { useTheme } from "next-themes"
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
@@ -46,13 +46,15 @@ const syntaxLinter = linter((view) => {
   return diagnostics.slice(0, 5);
 });
 
-export default function PreviewPage() {
-  const { userId } = useAuth()
+function PreviewContent() {
+  const { data: session } = useSession()
+  const userId = session?.user?.email
   const searchParams = useSearchParams()
   const historyId = searchParams.get('id')
 
   const [code, setCode] = useState<string>("")
   const [originalCode, setOriginalCode] = useState<string>("")
+  const [lastSavedCode, setLastSavedCode] = useState<string>("")
   const [srcDoc, setSrcDoc] = useState<string>("")
 
   const [loading, setLoading] = useState(true)
@@ -107,6 +109,7 @@ export default function PreviewPage() {
           if (res.ok && data) {
             setCode(data.current_code)
             setOriginalCode(data.original_code)
+            setLastSavedCode(data.current_code)
             setProjectName(data.title || `Generation_${new Date(data.created_at).toLocaleDateString()}`)
             setSrcDoc(buildPreviewSrcDoc(data.current_code))
           } else {
@@ -121,7 +124,8 @@ export default function PreviewPage() {
           const stored = sessionStorage.getItem("generatedPreviewCode")
           if (stored) {
             setCode(stored)
-            setOriginalCode(stored) // For fresh generation, original is same as current
+            setOriginalCode(stored)
+            setLastSavedCode(stored)
             setSrcDoc(buildPreviewSrcDoc(stored))
 
             // Trigger naming modal for new generation (if not already archived)
@@ -148,7 +152,7 @@ export default function PreviewPage() {
   }, [code])
 
   // Determine if there are unsaved changes
-  const hasUnsavedChanges = historyId ? (code !== "") && (code !== originalCode) : false // Only checking in persistent mode
+  const hasUnsavedChanges = historyId ? (code !== "") && (code !== lastSavedCode) : false // Only checking in persistent mode
 
   // Intercept Navigation (Link clicks)
   const handleExitClick = (e: React.MouseEvent, path: string) => {
@@ -205,7 +209,7 @@ export default function PreviewPage() {
       });
 
       if (!res.ok) throw new Error("Sync failure");
-      setOriginalCode(code) // Update original as we've saved
+      setLastSavedCode(code) // Update last saved as we've saved
     } catch (err) {
       console.error("Save Error:", err);
       // If we don't have a historyId, we should trigger the naming modal instead of just failing
@@ -261,6 +265,7 @@ export default function PreviewPage() {
       })
       const data = await res.json()
       if (res.ok && data.id) {
+        setLastSavedCode(code)
         sessionStorage.setItem("namingModalShown", "true")
         router.replace(`/preview?id=${data.id}`)
         setShowProjectNaming(false)
@@ -283,6 +288,7 @@ export default function PreviewPage() {
       cancelLabel: "Abort_Reset",
       onConfirm: async () => {
         setCode(originalCode)
+        setLastSavedCode(originalCode)
         if (historyId) {
           setIsSaving(true)
           await supabase.from('generated_code').update({ current_code: originalCode }).eq('id', historyId)
@@ -346,7 +352,7 @@ export default function PreviewPage() {
       <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center">
         <div className="bg-card p-10 rounded-lg border border-border">
           <h2 className="text-xl font-bold text-foreground mb-4 font-mono uppercase">No Code Found</h2>
-          <Link href="/dashboard" className="text-primary hover:text-primary/80 underline font-mono">Return to Dashboard</Link>
+          <Link href="/history" className="text-primary hover:text-primary/80 underline font-mono">Return to Archives</Link>
         </div>
       </div>
     )
@@ -405,13 +411,11 @@ export default function PreviewPage() {
             </div>
           </div>
 
-          <UserButton
-            appearance={{
-              elements: {
-                avatarBox: "border-2 border-primary/50 rounded-sm w-7 h-7"
-              }
-            }}
-          />
+          {session && (
+            <div className="w-7 h-7 rounded-sm border-2 border-primary/50 bg-primary/10 flex items-center justify-center text-[10px] font-bold">
+              {session.user?.name?.charAt(0) || '?'}
+            </div>
+          )}
         </div>
       </header>
 
@@ -671,7 +675,7 @@ export default function PreviewPage() {
               </button>
               <button
                 disabled={!newProjectName.trim() || isArchiving}
-                onClick={handleInitialSave}
+                onClick={() => handleInitialSave()}
                 className="px-8 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-[10px] font-bold uppercase tracking-widest font-mono shadow-[0_0_20px_rgba(var(--primary),0.3)] transition-all rounded-sm flex items-center gap-3 group"
               >
                 {isArchiving ? (
@@ -691,5 +695,20 @@ export default function PreviewPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function PreviewPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#030712] flex items-center justify-center font-mono">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin shadow-[0_0_15px_rgba(6,182,212,0.3)]"></div>
+          <p className="text-cyan-500 text-xs animate-pulse tracking-[0.2em] uppercase">Initializing_Kernel...</p>
+        </div>
+      </div>
+    }>
+      <PreviewContent />
+    </Suspense>
   )
 }

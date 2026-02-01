@@ -1,7 +1,9 @@
 import '@/app/globals.css'
 import React from 'react'
-import { ClerkProvider } from '@clerk/nextjs'
 import { Rajdhani, Share_Tech_Mono } from 'next/font/google'
+import RootLayoutClient from "@/components/RootLayoutClient"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
 
 const rajdhani = Rajdhani({
   subsets: ['latin'],
@@ -20,26 +22,22 @@ export const metadata = {
   description: 'Transform your hand-drawn sketches and wireframes into production-ready React components using state-of-the-art vision AI.',
 }
 
-import { ThemeProvider } from "@/components/theme-provider"
-import AppShell from "@/components/AppShell"
-
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const session = await getServerSession(authOptions)
+  
   return (
-    <ClerkProvider>
-      <html lang="en" className="scroll-smooth" suppressHydrationWarning>
-        <body className={`${rajdhani.variable} ${shareTechMono.variable} font-sans bg-background text-foreground antialiased`}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <AppShell>
-              {children}
-            </AppShell>
-          </ThemeProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+      <body>
+        <RootLayoutClient 
+          session={session}
+          rajdhaniVariable={rajdhani.variable}
+          shareTechMonoVariable={shareTechMono.variable}
+        >
+          {children}
+        </RootLayoutClient>
+      </body>
+    </html>
   )
 }
+
+

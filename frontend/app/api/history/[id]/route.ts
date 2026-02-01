@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.email) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -22,7 +23,7 @@ export async function GET(
             .from('generated_code')
             .select('current_code, original_code, title, model, created_at')
             .eq('id', id)
-            .eq('user_id', userId)
+            .eq('user_id', session.user.email)
             .single();
 
         if (error) {
@@ -42,11 +43,11 @@ export async function GET(
 }
 export async function PATCH(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.email) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -65,7 +66,7 @@ export async function PATCH(
             .from('generated_code')
             .update(updates)
             .eq('id', id)
-            .eq('user_id', userId)
+            .eq('user_id', session.user.email)
             .select()
             .single();
 
@@ -83,11 +84,11 @@ export async function PATCH(
 
 export async function DELETE(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { userId } = await auth();
-        if (!userId) {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.email) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -101,7 +102,7 @@ export async function DELETE(
             .from('generated_code')
             .delete()
             .eq('id', id)
-            .eq('user_id', userId);
+            .eq('user_id', session.user.email);
 
         if (error) {
             console.error("Supabase Project Delete Error:", error);

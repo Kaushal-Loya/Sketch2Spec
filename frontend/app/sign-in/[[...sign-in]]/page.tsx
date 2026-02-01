@@ -1,23 +1,19 @@
-import { SignIn } from "@clerk/nextjs";
+'use client'
+
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function Page() {
+    const router = useRouter();
+
     return (
-        <div className="flex items-center justify-center min-h-screen bg-slate-950">
-            <SignIn appearance={{
-                elements: {
-                    formButtonPrimary: 'bg-blue-600 hover:bg-blue-700 text-sm normal-case',
-                    card: 'bg-slate-900 border border-slate-800',
-                    headerTitle: 'text-white',
-                    headerSubtitle: 'text-slate-400',
-                    socialButtonsBlockButton: 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-white',
-                    socialButtonsBlockButtonText: 'text-white',
-                    dividerText: 'text-slate-500',
-                    formFieldLabel: 'text-slate-300',
-                    formFieldInput: 'bg-slate-800 border-slate-700 text-white',
-                    footerActionText: 'text-slate-400',
-                    footerActionLink: 'text-blue-400 hover:text-blue-300'
-                }
-            }} />
+        <div className="flex items-center justify-center min-h-screen bg-background">
+            <button 
+                onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+                className="px-6 py-3 bg-primary text-primary-foreground font-bold uppercase tracking-widest rounded-sm hover:bg-primary/90 transition-all"
+            >
+                Sign In with Google
+            </button>
         </div>
     );
 }

@@ -3,24 +3,25 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Zap, LayoutGrid, Clock, Settings, FileText, Sun, Moon, Shield } from 'lucide-react'
-import { UserButton, useUser } from '@clerk/nextjs'
+import { Zap, LayoutGrid, Clock, Settings, Sun, Moon, User } from 'lucide-react'
+import { signOut, useSession } from 'next-auth/react'
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 
 const navItems = [
-    { label: 'Workspace', icon: LayoutGrid, href: '/dashboard', active: true },
-    { label: 'Archived_Logs', icon: Clock, href: '/history', active: false },
-    { label: 'Configuration', icon: Settings, href: '#', active: false },
+    { label: 'Workspace', icon: LayoutGrid, href: '/dashboard' },
+    { label: 'Archived_Logs', icon: Clock, href: '/history' },
+    { label: 'Configuration', icon: Settings, href: '#' },
 ]
 
 export default function Sidebar() {
-    const { user } = useUser()
+    const { data: session } = useSession()
     const pathname = usePathname()
     const { theme, setTheme } = useTheme()
     const [mounted, setMounted] = useState(false)
     const [open, setOpen] = useState(false)
+    const [userMenuOpen, setUserMenuOpen] = useState(false)
 
     useEffect(() => {
         setMounted(true)
@@ -34,7 +35,7 @@ export default function Sidebar() {
             }}
             onMouseEnter={() => setOpen(true)}
             onMouseLeave={() => setOpen(false)}
-            className="h-screen bg-card border-r border-border flex flex-col sticky top-0 hidden md:flex z-40 overflow-hidden"
+            className="h-screen bg-card border-r border-border flex flex-col sticky top-0 hidden md:flex z-40"
         >
             {/* Logo Section */}
             <div className={cn("h-16 flex items-center px-6 border-b border-border bg-background/50 backdrop-blur-md transition-all gap-3 overflow-hidden whitespace-nowrap", !open && "justify-center px-0")}>
@@ -95,7 +96,7 @@ export default function Sidebar() {
             </nav>
 
             {/* System Status / Footer */}
-            <div className="p-4 border-t border-border bg-background/50 backdrop-blur-md flex flex-col gap-4 overflow-hidden whitespace-nowrap">
+            <div className="p-4 border-t border-border bg-background/50 backdrop-blur-md flex flex-col gap-4 whitespace-nowrap">
                 {/* Theme Toggle */}
                 <button
                     onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -129,27 +130,73 @@ export default function Sidebar() {
                     )}
                 </button>
 
-                <div className={cn("flex items-center gap-3 overflow-hidden", !open && "justify-center")}>
-                    <div className="flex-shrink-0">
-                        <UserButton
-                            appearance={{
-                                elements: {
-                                    avatarBox: "w-8 h-8 rounded-sm border border-primary/50"
-                                }
-                            }}
-                        />
-                    </div>
+                <div className={cn("relative flex items-center gap-3", !open && "justify-center")}>
+                    {session && (
+                        <div
+                            className="flex items-center gap-3 cursor-pointer group/user"
+                            onClick={() => setUserMenuOpen(!userMenuOpen)}
+                        >
+                            <div className="w-8 h-8 rounded-sm border border-primary/30 bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary flex-shrink-0">
+                                {session.user?.name?.charAt(0) || 'U'}
+                            </div>
+                            <AnimatePresence>
+                                {open && (
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -10 }}
+                                        className="flex flex-col overflow-hidden"
+                                    >
+                                        <span className="text-xs font-bold text-foreground font-mono truncate group-hover/user:text-primary transition-colors">
+                                            {session.user?.name || "User_Session"}
+                                        </span>
+                                        <span className="text-[10px] text-muted-foreground/50 font-mono uppercase tracking-widest">
+                                            [ ACCESS_GRANTED ]
+                                        </span>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    )}
+
+                    {/* Floating User Menu */}
                     <AnimatePresence>
-                        {open && (
-                            <Link href="/profile" className="flex flex-col overflow-hidden hover:opacity-80 transition-opacity">
-                                <span className="text-xs font-bold text-foreground font-mono truncate">
-                                    {user?.username || user?.firstName || "User_Session"}
-                                </span>
-                                <span className="text-[10px] text-green-500 font-mono flex items-center gap-1">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                                    Online
-                                </span>
-                            </Link>
+                        {userMenuOpen && open && (
+                            <>
+                                {/* Click Backdrop */}
+                                <div
+                                    className="fixed inset-0 z-[-1]"
+                                    onClick={() => setUserMenuOpen(false)}
+                                />
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    className="absolute bottom-full left-0 mb-2 w-48 bg-card border border-primary/30 rounded-sm shadow-2xl p-1 z-50 backdrop-blur-md"
+                                >
+                                    <Link
+                                        href="/profile"
+                                        onClick={() => setUserMenuOpen(false)}
+                                        className="flex items-center gap-3 px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
+                                    >
+                                        <User className="w-3 h-3" />
+                                        Profile_ID
+                                    </Link>
+                                    <button
+                                        onClick={() => signOut()}
+                                        className="w-full flex items-center gap-3 px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:text-red-400 hover:bg-red-400/5 transition-all"
+                                    >
+                                        <Zap className="w-3 h-3" />
+                                        Disconnect
+                                    </button>
+                                    <div className="absolute top-0 right-0 p-1 opacity-20">
+                                        <div className="w-1 h-1 bg-primary"></div>
+                                    </div>
+                                    <div className="absolute bottom-0 left-0 p-1 opacity-20">
+                                        <div className="w-1 h-1 bg-primary"></div>
+                                    </div>
+                                </motion.div>
+                            </>
                         )}
                     </AnimatePresence>
                 </div>
@@ -157,3 +204,4 @@ export default function Sidebar() {
         </motion.aside>
     )
 }
+

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react"
 import { createClient } from "@supabase/supabase-js"
 import Link from "next/link"
 import { ArrowLeft, Clock, Code2, Calendar, Pencil, Trash2, ShieldAlert } from "lucide-react"
-import { useAuth } from "@clerk/nextjs"
+import { useSession } from "next-auth/react"
 
 // Initialize Supabase Client (Client-side)
 const supabase = createClient(
@@ -21,7 +21,7 @@ type HistoryItem = {
 }
 
 export default function HistoryPage() {
-    const { userId } = useAuth()
+    const { data: session } = useSession()
     const [history, setHistory] = useState<HistoryItem[]>([])
     const [loading, setLoading] = useState(true)
     const [editingId, setEditingId] = useState<string | null>(null)
@@ -64,12 +64,15 @@ export default function HistoryPage() {
     }
 
     useEffect(() => {
-        if (!userId) return
+        if (!session?.user) return
 
         async function fetchHistory() {
             try {
                 const res = await fetch('/api/history')
-                if (!res.ok) throw new Error('Failed to fetch history')
+                if (!res.ok) {
+                    const errorData = await res.json().catch(() => ({}));
+                    throw new Error(`Failed to fetch history: ${res.status} ${errorData.error || ''}`);
+                }
                 const data = await res.json()
                 setHistory(data || [])
             } catch (error) {
@@ -80,7 +83,7 @@ export default function HistoryPage() {
         }
 
         fetchHistory()
-    }, [userId])
+    }, [session?.user])
 
     if (loading) {
         return (

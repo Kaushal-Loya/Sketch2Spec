@@ -3,8 +3,6 @@
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Zap, Target, Cpu, Code2, ScanLine, Terminal } from 'lucide-react'
-import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
-
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false)
 
@@ -22,13 +20,13 @@ export default function LandingPage() {
       </div>
 
 
-      <main className="relative z-10 pt-32 pb-20">
+      <main className="relative z-10 pt-0 pb-20">
         {/* Hero Section */}
         <section className="relative px-6">
           <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
 
             {/* Left: Content */}
-            <div className="space-y-8 relative">
+            <div className="space-y-3 relative">
               <div className={`inline-flex items-center gap-2 px-3 py-1 border border-cyan-900/50 bg-cyan-950/30 text-cyan-400 text-[10px] font-mono tracking-[0.2em] transform transition-all duration-700 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
                 <span className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></span>
                 VISION_CORE :: ONLINE
@@ -39,13 +37,11 @@ export default function LandingPage() {
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">YOUR VISION</span>
               </h1>
 
-              <p className={`text-lg text-slate-400 font-mono leading-relaxed max-w-xl border-l-2 border-cyan-900 pl-6 transform transition-all duration-700 delay-200 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-                // Translate analogue wireframes into production-grade React components.
-                <br />
-                // Powered by Gemini Vision Pro.
-                <br />
-                <span className="text-cyan-600">// Latency: 12ms. Accuracy: 99.8%.</span>
-              </p>
+              <div className={`text-lg text-slate-400 font-mono leading-relaxed max-w-xl border-l-2 border-cyan-900 pl-6 transform transition-all duration-700 delay-200 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
+                Translate analogue wireframes into production-grade React components.
+                <hr className="border-cyan-900/30 my-3" />
+                Powered by Gemini Vision Pro.
+              </div>
 
               <div className={`flex flex-wrap gap-4 pt-4 transform transition-all duration-700 delay-300 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
                 <Link href="/dashboard" className="group relative px-8 py-4 bg-cyan-500 text-black font-bold text-sm tracking-widest uppercase hover:bg-cyan-400 transition-colors shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)]">

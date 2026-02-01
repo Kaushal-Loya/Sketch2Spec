@@ -3,9 +3,11 @@
 import React from 'react'
 import Link from 'next/link'
 import { ArrowRight, ScanLine } from 'lucide-react'
-import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
+import { signIn, useSession, signOut } from 'next-auth/react'
 
 export default function Navbar() {
+    const { data: session } = useSession()
+
     return (
         <nav className="fixed top-0 w-full z-50 border-b border-cyan-900/30 bg-[#030712]/80 backdrop-blur-md">
             <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
@@ -21,29 +23,40 @@ export default function Navbar() {
                 </Link>
 
                 <div className="flex items-center gap-6">
-                    <SignedOut>
-                        <Link href="/sign-in" className="hidden md:block text-sm font-mono text-cyan-600 hover:text-cyan-400 transition-colors uppercase tracking-widest">
-                            [ Sign_In ]
-                        </Link>
-                        <Link href="/sign-up" className="group relative px-6 py-2 bg-cyan-950 border border-cyan-800 hover:border-cyan-500 transition-all overflow-hidden rounded-sm">
-                            <div className="absolute inset-0 bg-cyan-500/10 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></div>
-                            <span className="relative z-10 text-cyan-400 font-mono text-xs font-bold tracking-widest uppercase flex items-center gap-2">
-                                Sign_Up <ArrowRight className="w-3 h-3" />
-                            </span>
-                        </Link>
-                    </SignedOut>
-                    <SignedIn>
-                        <Link href="/dashboard" className="px-6 py-2 bg-cyan-600/10 border border-cyan-500 text-cyan-400 font-mono text-xs hover:bg-cyan-600 hover:text-white transition-all uppercase tracking-widest">
-                            ENTER_CONSOLE
-                        </Link>
-                        <UserButton
-                            appearance={{
-                                elements: {
-                                    avatarBox: "border-2 border-cyan-900 rounded-sm w-8 h-8"
-                                }
-                            }}
-                        />
-                    </SignedIn>
+                    {!session ? (
+                        <>
+                            <button 
+                                onClick={() => signIn('google')}
+                                className="hidden md:block text-sm font-mono text-cyan-600 hover:text-cyan-400 transition-colors uppercase tracking-widest"
+                            >
+                                [ Sign_In ]
+                            </button>
+                            <button 
+                                onClick={() => signIn('google')}
+                                className="group relative px-6 py-2 bg-cyan-950 border border-cyan-800 hover:border-cyan-500 transition-all overflow-hidden rounded-sm"
+                            >
+                                <div className="absolute inset-0 bg-cyan-500/10 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></div>
+                                <span className="relative z-10 text-cyan-400 font-mono text-xs font-bold tracking-widest uppercase flex items-center gap-2">
+                                    Sign_Up <ArrowRight className="w-3 h-3" />
+                                </span>
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <Link href="/dashboard" className="px-6 py-2 bg-cyan-600/10 border border-cyan-500 text-cyan-400 font-mono text-xs hover:bg-cyan-600 hover:text-white transition-all uppercase tracking-widest">
+                                ENTER_CONSOLE
+                            </Link>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-cyan-400 font-mono">{session.user?.name}</span>
+                                <button
+                                    onClick={() => signOut()}
+                                    className="text-xs font-mono text-cyan-600 hover:text-cyan-400 transition-colors uppercase tracking-widest"
+                                >
+                                    Sign Out
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </nav>
