@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY! // Use Service Role Key for backend operations to bypass RLS if needed, or Anon Key for client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co"
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "placeholder-key"
 
 // We use the Service Role Key here because we are likely using this in API routes 
 // where we want full access (or we pass the user's auth token to respect RLS).
