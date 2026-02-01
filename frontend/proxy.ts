@@ -6,7 +6,7 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: () => true, // TEMP: Allow all access to debug auth flow
+      authorized: ({ token }) => !!token,
     },
   }
 )
