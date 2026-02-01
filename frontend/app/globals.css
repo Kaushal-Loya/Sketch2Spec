@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Dark Blueprint Theme */
+  --background: 224 71% 4%; /* #030712 - Very dark blue */
+  --foreground: 210 40% 98%;
+
+  --card: 224 71% 4%;
+  --card-foreground: 210 40% 98%;
+
+  --popover: 224 71% 4%;
+  --popover-foreground: 210 40% 98%;
+
+  --primary: 180 100% 50%; /* Cyan/Electric Blue */
+  --primary-foreground: 222 47% 11%;
+
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+
+  --accent: 180 100% 50%;
+  --accent-foreground: 222 47% 11%;
+
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 217 33% 17%;
+  --input: 217 33% 17%;
+  --ring: 180 100% 50%;
+
+  --radius: 0.25rem; /* Sharper corners for technical feel */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-cyan-900 selection:text-cyan-50;
+    background-image: 
+      linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+}
+
+@layer utilities {
+  .tech-border {
+    @apply border border-cyan-900/50 bg-slate-950/50 backdrop-blur-sm relative;
+  }
+  
+  .tech-border::after {
+    content: '';
+    position: absolute;
+    top: -1px; left: -1px;
+    width: 6px; height: 6px;
+    border-top: 1px solid theme('colors.cyan.500');
+    border-left: 1px solid theme('colors.cyan.500');
+    transition: all 0.3s ease;
+  }
+  
+  .tech-border::before {
+    content: '';
+    position: absolute;
+    bottom: -1px; right: -1px;
+    width: 6px; height: 6px;
+    border-bottom: 1px solid theme('colors.cyan.500');
+    border-right: 1px solid theme('colors.cyan.500');
+    transition: all 0.3s ease;
+  }
+
+  .tech-border:hover::after, .tech-border:hover::before {
+    width: 100%;
+    height: 100%;
+    opacity: 0.2;
+  }
+
+  .glass-tech {
+    @apply bg-[#030712]/80 backdrop-blur-md border border-cyan-500/10 shadow-[0_0_15px_rgba(0,240,255,0.05)];
+  }
+
+  .text-glow {
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-slate-950;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-800 rounded-none hover:bg-cyan-900 transition-colors;
+}

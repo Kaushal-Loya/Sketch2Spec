@@ -1,0 +1,16 @@
+{
+    "name": "backend",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "echo 'No backend server setup yet. API logic moved from Next.js.'",
+        "test": "tsx ../scripts/dryRun.ts"
+    },
+    "dependencies": {
+        "dotenv": "^16.4.7"
+    },
+    "devDependencies": {
+        "tsx": "^4.19.2",
+        "typescript": "^5"
+    }
+}
