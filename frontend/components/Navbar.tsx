@@ -25,13 +25,13 @@ export default function Navbar() {
                 <div className="flex items-center gap-6">
                     {!session ? (
                         <>
-                            <button 
+                            <button
                                 onClick={() => signIn('google')}
                                 className="hidden md:block text-sm font-mono text-cyan-600 hover:text-cyan-400 transition-colors uppercase tracking-widest"
                             >
                                 [ Sign_In ]
                             </button>
-                            <button 
+                            <button
                                 onClick={() => signIn('google')}
                                 className="group relative px-6 py-2 bg-cyan-950 border border-cyan-800 hover:border-cyan-500 transition-all overflow-hidden rounded-sm"
                             >
@@ -49,7 +49,7 @@ export default function Navbar() {
                             <div className="flex items-center gap-2">
                                 <span className="text-xs text-cyan-400 font-mono">{session.user?.name}</span>
                                 <button
-                                    onClick={() => signOut()}
+                                    onClick={() => signOut({ callbackUrl: "/" })}
                                     className="text-xs font-mono text-cyan-600 hover:text-cyan-400 transition-colors uppercase tracking-widest"
                                 >
                                     Sign Out

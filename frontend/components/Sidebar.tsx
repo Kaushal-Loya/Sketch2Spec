@@ -179,7 +179,7 @@ export default function Sidebar() {
                                         Profile_ID
                                     </Link>
                                     <button
-                                        onClick={() => signOut()}
+                                        onClick={() => signOut({ callbackUrl: "/" })}
                                         className="w-full flex items-center gap-3 px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:text-red-400 hover:bg-red-400/5 transition-all"
                                     >
                                         <LogOut className="w-3 h-3" />
