@@ -33,7 +33,7 @@ export default function DashboardPage() {
 
       {/* Main Content Area */}
       <main className="flex-1 relative z-10">
-        <div className="max-w-5xl mx-auto px-6 py-12 lg:py-24">
+        <div className="max-w-5xl mx-auto px-6 py-8 lg:py-16">
 
           <div className="mb-12 border-l-2 border-primary/50 pl-6 relative">
             <Link href="/" className="inline-flex items-center gap-2 text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors mb-4 group uppercase tracking-widest font-mono">
@@ -43,15 +43,10 @@ export default function DashboardPage() {
 
             <div className="flex items-center gap-4 mb-2">
               <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight uppercase">
-                Neural_Workspace
+                Workspace
               </h1>
               <Cpu className="w-6 h-6 text-primary animate-pulse" />
             </div>
-
-            <p className="text-sm text-muted-foreground font-mono max-w-2xl">
-                // Initialize generation sequence. Upload source material.<br />
-                // Protocol: Vision-to-JSX. Latency: Minimal.
-            </p>
           </div>
 
           <div className="relative">

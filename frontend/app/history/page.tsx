@@ -110,7 +110,7 @@ export default function HistoryPage() {
                 </div>
             </header>
 
-            <main className="relative z-10 max-w-7xl mx-auto p-6 md:p-12">
+            <main className="relative z-10 max-w-7xl mx-auto px-6 py-8 md:px-12 md:py-12">
                 {history.length === 0 ? (
                     <div className="text-center py-20 border border-dashed border-border rounded-lg bg-card/50">
                         <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />

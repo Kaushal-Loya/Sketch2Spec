@@ -21,23 +21,22 @@ export const metadata = {
 }
 
 import { ThemeProvider } from "@/components/theme-provider"
-import Sidebar from "@/components/Sidebar"
+import AppShell from "@/components/AppShell"
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider>
       <html lang="en" className="scroll-smooth" suppressHydrationWarning>
-        <body className={`${rajdhani.variable} ${shareTechMono.variable} font-sans bg-background text-foreground antialiased overflow-hidden flex h-screen`}>
+        <body className={`${rajdhani.variable} ${shareTechMono.variable} font-sans bg-background text-foreground antialiased`}>
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
             enableSystem
             disableTransitionOnChange
           >
-            <Sidebar />
-            <main className="flex-1 overflow-auto relative w-full h-full">
+            <AppShell>
               {children}
-            </main>
+            </AppShell>
           </ThemeProvider>
         </body>
       </html>

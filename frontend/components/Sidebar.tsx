@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Zap, LayoutGrid, Clock, Settings, FileText, Sun, Moon } from 'lucide-react'
-import { UserButton } from '@clerk/nextjs'
+import { Zap, LayoutGrid, Clock, Settings, FileText, Sun, Moon, Shield } from 'lucide-react'
+import { UserButton, useUser } from '@clerk/nextjs'
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
@@ -12,11 +12,11 @@ import { cn } from "@/lib/utils"
 const navItems = [
     { label: 'Workspace', icon: LayoutGrid, href: '/dashboard', active: true },
     { label: 'Archived_Logs', icon: Clock, href: '/history', active: false },
-    { label: 'System_Docs', icon: FileText, href: '#', active: false },
     { label: 'Configuration', icon: Settings, href: '#', active: false },
 ]
 
 export default function Sidebar() {
+    const { user } = useUser()
     const pathname = usePathname()
     const { theme, setTheme } = useTheme()
     const [mounted, setMounted] = useState(false)
@@ -141,18 +141,15 @@ export default function Sidebar() {
                     </div>
                     <AnimatePresence>
                         {open && (
-                            <motion.div
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -10 }}
-                                className="flex flex-col overflow-hidden"
-                            >
-                                <span className="text-xs font-bold text-foreground font-mono truncate">User_Session</span>
+                            <Link href="/profile" className="flex flex-col overflow-hidden hover:opacity-80 transition-opacity">
+                                <span className="text-xs font-bold text-foreground font-mono truncate">
+                                    {user?.username || user?.firstName || "User_Session"}
+                                </span>
                                 <span className="text-[10px] text-green-500 font-mono flex items-center gap-1">
                                     <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
                                     Online
                                 </span>
-                            </motion.div>
+                            </Link>
                         )}
                     </AnimatePresence>
                 </div>
