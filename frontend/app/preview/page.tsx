@@ -1,30 +1,188 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import { buildPreviewSrcDoc } from "@/lib/buildPreviewSrcDoc"
 import Link from "next/link"
-import { Copy, ArrowLeft, Code2, Eye, Smartphone, Tablet, Monitor, CheckCircle, ChevronLeft, Zap, Box, X, Terminal, Maximize2, Minimize2, Cpu } from "lucide-react"
-import { UserButton } from "@clerk/nextjs"
+import { useSearchParams, useRouter } from "next/navigation"
+import { createClient } from "@supabase/supabase-js"
+import { Copy, ArrowLeft, Code2, Eye, Smartphone, Tablet, Monitor, CheckCircle, ChevronLeft, Zap, Box, X, Terminal, Maximize2, Minimize2, Cpu, Save, RotateCcw, Loader2, Pencil } from "lucide-react"
+import { UserButton, useAuth } from "@clerk/nextjs"
+import { useTheme } from "next-themes"
+import CodeMirror from '@uiw/react-codemirror';
+import { javascript } from '@codemirror/lang-javascript';
+import { vscodeDark } from '@uiw/codemirror-theme-vscode';
+import { xcodeLight } from '@uiw/codemirror-theme-xcode';
+import { linter, lintGutter } from "@codemirror/lint";
+import { syntaxTree } from "@codemirror/language";
+
+// Initialize Supabase Client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
+// Real-time Syntax Linter based on Parser Errors (STABLE IDENTITY)
+const syntaxLinter = linter((view) => {
+  const diagnostics: any[] = [];
+  syntaxTree(view.state).iterate({
+    enter: (node) => {
+      if (node.type.isError) {
+        // Attempt to extract contextual information for the user
+        const text = view.state.doc.sliceString(node.from, Math.min(node.to, node.from + 20));
+        const message = text.trim()
+          ? `Unexpected_Token: '${text}...' - Please check your JSX structure or syntax.`
+          : "Malformed_Syntax: Likely an unclosed tag, brace, or quote.";
+
+        diagnostics.push({
+          from: node.from,
+          to: node.to,
+          severity: "error",
+          message: message,
+        });
+      }
+    },
+  });
+  // Limit diagnostics to keep the UI from "exploding" with red markers
+  return diagnostics.slice(0, 5);
+});
 
 export default function PreviewPage() {
-  const [code, setCode] = useState<string | null>(null)
+  const { userId } = useAuth()
+  const searchParams = useSearchParams()
+  const historyId = searchParams.get('id')
+
+  const [code, setCode] = useState<string>("")
+  const [originalCode, setOriginalCode] = useState<string>("")
   const [srcDoc, setSrcDoc] = useState<string>("")
+
+  const [loading, setLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
   const [copied, setCopied] = useState(false)
+  const { theme, systemTheme } = useTheme()
   const [viewMode, setViewMode] = useState<"desktop" | "tablet" | "mobile">("desktop")
+
+  const currentTheme = theme === 'system' ? systemTheme : theme
+  const editorTheme = currentTheme === 'dark' ? vscodeDark : xcodeLight
   const [isRegenerating, setIsRegenerating] = useState(false)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+  const [projectName, setProjectName] = useState<string>("Editor_v1.0")
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [showProjectNaming, setShowProjectNaming] = useState(false)
+  const [newProjectName, setNewProjectName] = useState("")
+  const [isArchiving, setIsArchiving] = useState(false)
 
+  // Memoize extensions to prevent flickering and marker persistence issues
+  const editorExtensions = React.useMemo(() => [
+    javascript({ jsx: true, typescript: true }),
+    syntaxLinter,
+    lintGutter()
+  ], []);
+
+  // Unified Modal State
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'warning' | 'error' | 'info';
+    confirmLabel?: string;
+    cancelLabel?: string;
+    onConfirm?: () => void;
+  } | null>(null);
+
+  const [pendingPath, setPendingPath] = useState<string | null>(null)
+
+  const router = useRouter()
+
+  // Load Code (from Supabase if ID exists, else from SessionStorage)
   useEffect(() => {
-    try {
-      const stored = sessionStorage.getItem("generatedPreviewCode")
-      if (stored) {
-        setCode(stored)
-        setSrcDoc(buildPreviewSrcDoc(stored))
+    async function loadContent() {
+      setLoading(true)
+
+      if (historyId && userId) {
+        // Load from API (Secure)
+        try {
+          const res = await fetch(`/api/history/${historyId}`)
+          const data = await res.json()
+
+          if (res.ok && data) {
+            setCode(data.current_code)
+            setOriginalCode(data.original_code)
+            setProjectName(data.title || `Generation_${new Date(data.created_at).toLocaleDateString()}`)
+            setSrcDoc(buildPreviewSrcDoc(data.current_code))
+          } else {
+            console.error("Error loading project:", data.error || "Unknown error")
+          }
+        } catch (error) {
+          console.error("Error fetching project:", error)
+        }
+      } else {
+        // Fallback: Load from Session Storage (New Generation)
+        try {
+          const stored = sessionStorage.getItem("generatedPreviewCode")
+          if (stored) {
+            setCode(stored)
+            setOriginalCode(stored) // For fresh generation, original is same as current
+            setSrcDoc(buildPreviewSrcDoc(stored))
+
+            // Trigger naming modal for new generation (if not already archived)
+            if (!historyId && !sessionStorage.getItem("namingModalShown")) {
+              setShowProjectNaming(true)
+            }
+          }
+        } catch (err) {
+          console.error(err)
+        }
       }
-    } catch (err) {
-      console.error("Failed to read preview code", err)
+      setLoading(false)
     }
-  }, [])
+
+    loadContent()
+  }, [historyId, userId])
+
+  // Update Preview when Code Changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSrcDoc(buildPreviewSrcDoc(code))
+    }, 800) // Debounce preview updates
+    return () => clearTimeout(timer)
+  }, [code])
+
+  // Determine if there are unsaved changes
+  const hasUnsavedChanges = historyId ? (code !== "") && (code !== originalCode) : false // Only checking in persistent mode
+
+  // Intercept Navigation (Link clicks)
+  const handleExitClick = (e: React.MouseEvent, path: string) => {
+    if (hasUnsavedChanges) {
+      e.preventDefault()
+      setPendingPath(path)
+      setModal({
+        isOpen: true,
+        title: "Unsaved_Changes_Detected",
+        type: "warning",
+        message: "Modification to source code detected in buffer. Navigating away will result in permanent data loss of current session.",
+        confirmLabel: "Discard_Changes",
+        cancelLabel: "Return_To_Editor",
+        onConfirm: () => {
+          if (path) router.push(path);
+          setModal(null);
+        }
+      });
+    }
+  }
+
+  // Intercept Browser Back Button / Reload
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault()
+        e.returnValue = '' // Standard requirement for Chrome/Firefox
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasUnsavedChanges])
+
 
   const handleCopy = () => {
     navigator.clipboard.writeText(code || "")
@@ -32,10 +190,119 @@ export default function PreviewPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const handleSave = async () => {
+    if (!historyId || !userId) {
+      alert("Cannot save temporary session. Please generate a new project to save.")
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const res = await fetch(`/api/history/${historyId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ current_code: code })
+      });
+
+      if (!res.ok) throw new Error("Sync failure");
+      setOriginalCode(code) // Update original as we've saved
+    } catch (err) {
+      console.error("Save Error:", err);
+      // If we don't have a historyId, we should trigger the naming modal instead of just failing
+      if (!historyId) {
+        setShowProjectNaming(true)
+        return
+      }
+      setModal({
+        isOpen: true,
+        title: "Database_Uplink_Error",
+        type: "error",
+        message: "Failed to sync changes with central archives. Please check network connection.",
+        confirmLabel: "Acknowledge"
+      });
+    }
+    setIsSaving(false)
+  }
+
+  const handleRename = async (newName: string) => {
+    const sanitized = newName.trim().substring(0, 50) || "Untitled_Project"
+    setProjectName(sanitized)
+    if (historyId) {
+      try {
+        await fetch(`/api/history/${historyId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: sanitized })
+        });
+      } catch (err) {
+        console.error("Rename Error:", err);
+      }
+    }
+    setIsEditingName(false)
+  }
+
+  const handleInitialSave = async (providedName?: string) => {
+    const sanitized = (providedName || newProjectName).trim().substring(0, 50) || `Generation_${new Date().toLocaleDateString()}`
+    const imageUrl = sessionStorage.getItem("lastUploadedImageUrl")
+    const model = sessionStorage.getItem("lastSelectedModel") || "gemini-flash-latest"
+
+    setIsArchiving(true)
+    try {
+      const res = await fetch("/api/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: sanitized,
+          current_code: code,
+          original_code: code,
+          image_url: imageUrl,
+          model: model
+        })
+      })
+      const data = await res.json()
+      if (res.ok && data.id) {
+        sessionStorage.setItem("namingModalShown", "true")
+        router.replace(`/preview?id=${data.id}`)
+        setShowProjectNaming(false)
+      } else {
+        throw new Error(data.error || "Persistence failure")
+      }
+    } catch (err) {
+      console.error(err)
+      setIsArchiving(false)
+    }
+  }
+
+  const handleReset = async () => {
+    setModal({
+      isOpen: true,
+      title: "Hard_Reset_Confirmation",
+      type: "warning",
+      message: "This will discard all current buffer modifications and revert the environment to the original AI seed generation. This cannot be undone.",
+      confirmLabel: "Confirm_Reset",
+      cancelLabel: "Abort_Reset",
+      onConfirm: async () => {
+        setCode(originalCode)
+        if (historyId) {
+          setIsSaving(true)
+          await supabase.from('generated_code').update({ current_code: originalCode }).eq('id', historyId)
+          setIsSaving(false)
+        }
+        setModal(null);
+      }
+    });
+  }
+
   const handleRegenerate = async () => {
     const imageUrl = sessionStorage.getItem("lastUploadedImageUrl")
     if (!imageUrl) {
-      alert("Source image not found. Please re-upload from dashboard.")
+      setModal({
+        isOpen: true,
+        title: "Session_Cache_Missing",
+        type: "error",
+        message: "Source image buffer has been cleared. Please re-upload the original wireframe to regenerate.",
+        confirmLabel: "Acknowledge"
+      });
       return
     }
 
@@ -53,8 +320,11 @@ export default function PreviewPage() {
       const data = await res.json()
       if (data.code) {
         setCode(data.code)
-        setSrcDoc(buildPreviewSrcDoc(data.code))
-        sessionStorage.setItem("generatedPreviewCode", data.code)
+        // Note: We don't overwrite 'originalCode' here unless we want to treat this re-roll as the new 'truth'. 
+        // For now, let's treat it as a fresh start.
+        if (!historyId) {
+          sessionStorage.setItem("generatedPreviewCode", data.code)
+        }
       }
     } catch (err) {
       console.error("Regeneration failed", err)
@@ -63,27 +333,20 @@ export default function PreviewPage() {
     }
   }
 
-  if (!code) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-[#030712] flex items-center justify-center p-6 text-center font-sans">
-        <div className="bg-[#050b1a] p-12 md:p-16 rounded-lg max-w-lg border border-cyan-900/50 shadow-[0_0_50px_rgba(8,145,178,0.1)] relative overflow-hidden">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#0891b205_1px,transparent_1px),linear-gradient(to_bottom,#0891b205_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    )
+  }
 
-          <div className="w-20 h-20 bg-red-950/20 rounded-full flex items-center justify-center mx-auto mb-10 border border-red-900 shadow-[0_0_20px_rgba(220,38,38,0.2)] relative z-10">
-            <Box className="w-10 h-10 text-red-500" />
-          </div>
-          <h2 className="text-3xl font-bold text-white mb-4 tracking-tight uppercase font-mono relative z-10">No Manifest Found</h2>
-          <p className="text-slate-400 font-mono text-sm mb-12 leading-relaxed relative z-10">
-            // Error: Buffer empty.<br />
-            // Please return to workspace and execute generation sequence.
-          </p>
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-3 px-10 py-5 rounded-sm bg-cyan-600 text-black font-bold hover:bg-cyan-500 transition-all shadow-[0_0_20px_rgba(8,145,178,0.3)] hover:shadow-[0_0_30px_rgba(8,145,178,0.5)] active:scale-95 uppercase tracking-widest font-mono relative z-10"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            Return_Workspace
-          </Link>
+  if (!code && !loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6 text-center">
+        <div className="bg-card p-10 rounded-lg border border-border">
+          <h2 className="text-xl font-bold text-foreground mb-4 font-mono uppercase">No Code Found</h2>
+          <Link href="/dashboard" className="text-primary hover:text-primary/80 underline font-mono">Return to Dashboard</Link>
         </div>
       </div>
     )
@@ -95,91 +358,141 @@ export default function PreviewPage() {
     mobile: "375px"
   }
 
+
   return (
-    <div className="h-screen bg-[#030712] flex flex-col font-sans selection:bg-cyan-900/50 selection:text-cyan-50 overflow-hidden relative">
-      {/* Background Grid */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#020617_1px,transparent_1px),linear-gradient(to_bottom,#020617_1px,transparent_1px)] bg-[size:32px_32px] opacity-20"></div>
-      </div>
+    <div className="h-screen flex flex-col font-sans selection:bg-primary/20 selection:text-primary overflow-hidden relative transition-colors duration-300">
 
       {/* Header */}
-      <header className="bg-[#030712] border-b border-cyan-900/30 flex-shrink-0 z-20">
+      <header className="bg-background border-b border-border flex-shrink-0 z-20">
         <div className="w-full px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link
-              href="/dashboard"
-              className="flex items-center gap-2 group text-cyan-700 hover:text-cyan-400 transition-all font-bold text-xs uppercase tracking-widest font-mono"
+              href={historyId ? "/history" : "/dashboard"}
+              onClick={(e) => handleExitClick(e, historyId ? "/history" : "/dashboard")}
+              className="flex items-center gap-2 group text-muted-foreground hover:text-primary transition-all font-bold text-xs uppercase tracking-widest font-mono"
             >
               <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" />
-              <span>Exit</span>
+              <span>{historyId ? "Back_To_Archives" : "Exit"}</span>
             </Link>
-            <div className="h-4 w-px bg-cyan-900/30 hidden sm:block" />
+            <div className="h-4 w-px bg-border hidden sm:block" />
             <div className="flex items-center gap-2">
-              <Terminal className="w-4 h-4 text-cyan-500" />
-              <h1 className="text-xs font-bold text-white uppercase tracking-widest font-mono">Code_Editor_v0.9</h1>
+              <Terminal className="w-4 h-4 text-primary" />
+              {isEditingName ? (
+                <input
+                  autoFocus
+                  type="text"
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  onBlur={(e) => handleRename(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleRename(e.currentTarget.value)
+                    if (e.key === 'Escape') setIsEditingName(false)
+                  }}
+                  className="bg-muted border border-primary/30 text-xs font-bold text-foreground px-2 py-1 rounded-sm outline-none focus:border-primary transition-all font-mono uppercase tracking-widest min-w-[200px]"
+                />
+              ) : (
+                <h1
+                  onClick={() => setIsEditingName(true)}
+                  className="text-xs font-bold text-foreground uppercase tracking-widest font-mono cursor-pointer hover:text-primary transition-colors flex items-center gap-2 group relative pr-6"
+                >
+                  <span className="truncate max-w-[300px]">{projectName || "Editor_v1.0"}</span>
+                  <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity absolute right-0" />
+                  <span className="text-[10px] text-muted-foreground ml-2 hidden lg:inline border-l border-border pl-2 font-normal lowercase tracking-normal">
+                    {historyId ? "// persistent_archive" : "// session_buffer"}
+                  </span>
+                </h1>
+              )}
             </div>
           </div>
 
           <UserButton
             appearance={{
               elements: {
-                avatarBox: "border-2 border-cyan-900 rounded-sm w-7 h-7"
+                avatarBox: "border-2 border-primary/50 rounded-sm w-7 h-7"
               }
             }}
           />
         </div>
       </header>
 
-      {/* Main Content: CODE ONLY */}
-      <main className="flex-1 relative z-10 overflow-hidden flex flex-col">
-        <div className="flex-1 bg-[#02040a] relative overflow-auto scrollbar-thin scrollbar-thumb-cyan-900/50 scrollbar-track-transparent">
-          {/* Line Numbers Sidebar Placeholder */}
-          <div className="absolute left-0 top-0 bottom-0 w-12 bg-[#02040a] border-r border-cyan-900/20 z-10 flex flex-col items-end py-6 pr-3 text-cyan-900/50 font-mono text-xs select-none">
-            {Array.from({ length: (code?.split('\n').length || 50) + 10 }).map((_, i) => <div key={i} className="leading-relaxed">{i + 1}</div>)}
-          </div>
-
-          <div className="pl-16 pr-6 py-6 min-h-full">
-            <pre className="font-mono text-sm leading-relaxed text-cyan-50/80 token-stream">
-              <code>{code}</code>
-            </pre>
-          </div>
+      {/* Main Content: CODE EDITOR */}
+      <main className="flex-1 relative z-10 overflow-hidden flex flex-col bg-card">
+        <div className={`flex-1 overflow-hidden ${currentTheme === 'light' ? 'bg-secondary/30' : ''}`}>
+          <CodeMirror
+            value={code}
+            height="100%"
+            theme={editorTheme}
+            extensions={editorExtensions}
+            onChange={(value) => setCode(value)}
+            className="h-full text-sm font-mono custom-cm-editor"
+            basicSetup={{
+              lineNumbers: true,
+              highlightActiveLine: true,
+              bracketMatching: true,
+              closeBrackets: true,
+              autocompletion: true,
+              foldGutter: true,
+              dropCursor: true,
+              allowMultipleSelections: true,
+              indentOnInput: true,
+            }}
+          />
         </div>
       </main>
 
       {/* Footer Taskbar */}
-      <footer className="h-16 bg-[#050b1a] border-t border-cyan-900/50 flex-shrink-0 z-30 flex items-center px-6 justify-between gap-4 relative">
-        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent"></div>
+      <footer className="h-16 bg-background border-t border-border flex-shrink-0 z-30 flex items-center px-6 justify-between gap-4 relative">
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-cyan-950/30 rounded-sm border border-cyan-900/30">
-            <Cpu className="w-3 h-3 text-cyan-600" />
-            <span className="text-[10px] font-mono text-cyan-600 uppercase">System: Stable</span>
-          </div>
+          {/* Contextual Actions (Save/Reset) */}
+          {historyId && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 hover:bg-secondary border border-border rounded-sm text-[10px] uppercase font-bold text-primary tracking-widest transition-all disabled:opacity-50"
+              >
+                {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                {isSaving ? "Saving..." : "Save_Changes"}
+              </button>
+
+              <button
+                onClick={handleReset}
+                className="flex items-center gap-2 px-3 py-1.5 hover:bg-destructive/10 border border-transparent hover:border-destructive/30 rounded-sm text-[10px] uppercase font-bold text-muted-foreground hover:text-destructive tracking-widest transition-all"
+                title="Revert to Original Generation"
+              >
+                <RotateCcw className="w-3 h-3" />
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-center gap-3">
-          <button
-            onClick={handleRegenerate}
-            disabled={isRegenerating}
-            className="group flex items-center gap-2 px-4 py-2 hover:bg-red-950/20 text-cyan-600 hover:text-red-400 font-bold text-[10px] uppercase tracking-widest font-mono transition-all disabled:opacity-50"
-          >
-            <Zap className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
-            {isRegenerating ? "Processing..." : "Reroll_Seed"}
-          </button>
+          {!historyId && (
+            <button
+              onClick={handleRegenerate}
+              disabled={isRegenerating}
+              className="group flex items-center gap-2 px-4 py-2 hover:bg-destructive/10 text-primary hover:text-destructive font-bold text-[10px] uppercase tracking-widest font-mono transition-all disabled:opacity-50"
+            >
+              <Zap className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
+              {isRegenerating ? "Processing..." : "Reroll_Seed"}
+            </button>
+          )}
 
           <button
             onClick={handleCopy}
-            className={`group flex items-center gap-2 px-4 py-2 font-bold text-[10px] uppercase tracking-widest font-mono transition-all ${copied ? "text-green-400" : "text-cyan-400 hover:text-white"}`}
+            className={`group flex items-center gap-2 px-4 py-2 font-bold text-[10px] uppercase tracking-widest font-mono transition-all ${copied ? "text-green-500" : "text-primary hover:text-foreground"}`}
           >
             {copied ? <CheckCircle className="w-3 h-3" /> : <Copy className="w-3 h-3 group-hover:scale-110" />}
             {copied ? "Copied" : "Copy_Source"}
           </button>
 
-          <div className="h-8 w-px bg-cyan-900/50 mx-2"></div>
+          <div className="h-8 w-px bg-border mx-2"></div>
 
           <button
             onClick={() => setIsPreviewOpen(true)}
-            className="flex items-center gap-3 px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-black font-bold uppercase tracking-widest font-mono text-xs shadow-[0_0_20px_rgba(8,145,178,0.4)] hover:shadow-[0_0_30px_rgba(8,145,178,0.6)] active:scale-95 transition-all skew-x-[-10deg]"
+            className="flex items-center gap-3 px-6 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold uppercase tracking-widest font-mono text-xs shadow-[0_0_20px_rgba(var(--primary),0.4)] hover:shadow-[0_0_30px_rgba(var(--primary),0.6)] active:scale-95 transition-all skew-x-[-10deg]"
           >
             <div className="skew-x-[10deg] flex items-center gap-2">
               <Eye className="w-4 h-4" />
@@ -189,7 +502,7 @@ export default function PreviewPage() {
         </div>
 
         <div className="flex items-center gap-4 justify-end">
-          <div className="text-[10px] text-cyan-900 font-mono text-right hidden sm:block">
+          <div className="text-[10px] text-muted-foreground font-mono text-right hidden sm:block">
             Ln {code?.split('\n').length}, Col 1<br /> UTF-8
           </div>
         </div>
@@ -235,6 +548,7 @@ export default function PreviewPage() {
             <button
               onClick={() => setIsPreviewOpen(false)}
               className="px-4 py-1.5 bg-red-950/20 hover:bg-red-500/20 text-red-500 border border-red-900/50 rounded-sm text-[10px] font-bold uppercase tracking-widest transition-all"
+              title="Close Fullscreen View"
             >
               Close_Window
             </button>
@@ -252,6 +566,126 @@ export default function PreviewPage() {
                 srcDoc={srcDoc}
                 sandbox="allow-scripts allow-same-origin"
               />
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Unified Technical Modal */}
+      {modal?.isOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className={`bg-card border ${modal.type === 'error' ? 'border-destructive/50 shadow-[0_0_50px_rgba(var(--destructive),0.2)]' : 'border-primary/30 shadow-[0_0_50px_rgba(var(--primary),0.2)]'} max-w-md w-full rounded-sm overflow-hidden animate-in zoom-in-95 duration-200`}>
+            <div className={`${modal.type === 'error' ? 'bg-destructive/10 border-destructive/20' : 'bg-primary/5 border-primary/10'} border-b p-4 flex items-center gap-3`}>
+              <div className={`w-8 h-8 rounded-full ${modal.type === 'error' ? 'bg-destructive/20' : 'bg-primary/20'} flex items-center justify-center`}>
+                <div className={`w-2 h-2 rounded-full ${modal.type === 'error' ? 'bg-destructive' : 'bg-primary'} animate-pulse`}></div>
+              </div>
+              <h3 className={`text-sm font-bold ${modal.type === 'error' ? 'text-destructive' : 'text-primary'} uppercase tracking-widest font-mono`}>{modal.title}</h3>
+            </div>
+
+            <div className="p-6">
+              <p className="text-sm text-foreground font-mono leading-relaxed">
+                {modal.type === 'error' && <span className="text-destructive font-bold">SYSTEM_FAILURE: </span>}
+                {modal.type === 'warning' && <span className="text-yellow-500 font-bold">DATA_RISK: </span>}
+                {modal.message}
+              </p>
+            </div>
+
+            <div className="p-4 bg-muted/30 border-t border-border flex items-center justify-end gap-3">
+              {modal.cancelLabel && (
+                <button
+                  onClick={() => setModal(null)}
+                  className="px-4 py-2 border border-border hover:bg-muted text-[10px] font-bold uppercase tracking-widest font-mono text-muted-foreground hover:text-foreground transition-all rounded-sm"
+                >
+                  {modal.cancelLabel}
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  if (modal.onConfirm) {
+                    modal.onConfirm();
+                  } else {
+                    setModal(null);
+                  }
+                }}
+                className={`px-4 py-2 ${modal.type === 'error' ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground' : 'bg-primary hover:bg-primary/90 text-primary-foreground'} text-[10px] font-bold uppercase tracking-widest font-mono shadow-md hover:shadow-lg transition-all rounded-sm flex items-center gap-2`}
+              >
+                {modal.confirmLabel || "Acknowledge"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Initial Project Naming Modal */}
+      {showProjectNaming && (
+        <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-background/90 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-card border border-primary/30 shadow-[0_0_80px_rgba(var(--primary),0.15)] max-w-lg w-full rounded-sm overflow-hidden animate-in zoom-in-95 duration-300 relative">
+            {/* Background Grid Accent */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(var(--primary),0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(var(--primary),0.03)_1px,transparent_1px)] bg-[size:15px_15px] pointer-events-none"></div>
+
+            <div className="bg-primary/5 border-b border-primary/20 p-6 relative">
+              <div className="flex items-center gap-3">
+                <Box className="w-6 h-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-bold text-foreground uppercase tracking-[0.2em] font-mono">Protocol: Identify_Project</h3>
+                  <p className="text-[10px] text-muted-foreground font-mono mt-1">// Status: Ready_For_Archival</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-8 relative">
+              <label className="block text-[10px] font-bold text-primary uppercase tracking-widest mb-3 font-mono">
+                Assigned_Project_ID
+              </label>
+              <div className="relative">
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="E.g. Nexus_Dashboard_v1"
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newProjectName.trim() && !isArchiving) {
+                      handleInitialSave()
+                    }
+                  }}
+                  className="w-full bg-muted/30 border border-primary/20 text-foreground px-4 py-4 rounded-sm outline-none focus:border-primary focus:bg-primary/5 transition-all font-mono text-sm uppercase tracking-wide placeholder:text-muted-foreground/30"
+                />
+                <div className="absolute top-0 right-0 h-full flex items-center pr-4">
+                  <Terminal className="w-4 h-4 text-primary/30" />
+                </div>
+              </div>
+              <p className="mt-4 text-[10px] text-muted-foreground font-mono uppercase tracking-widest leading-loose opacity-70">
+                // System will index this generation under the specified identifier.<br />
+                // All future revisions will be persisted to these archives.
+              </p>
+            </div>
+
+            <div className="p-6 bg-muted/20 border-t border-border flex items-center justify-end gap-3 relative">
+              <button
+                onClick={() => {
+                  handleInitialSave(`Generation_${new Date().toLocaleDateString()}`);
+                }}
+                className="px-6 py-2 border border-border hover:bg-muted text-[10px] font-bold uppercase tracking-widest font-mono text-muted-foreground hover:text-foreground transition-all rounded-sm flex items-center gap-2"
+              >
+                {isArchiving ? <Loader2 className="w-3 h-3 animate-spin" /> : "Skip_For_Now"}
+              </button>
+              <button
+                disabled={!newProjectName.trim() || isArchiving}
+                onClick={handleInitialSave}
+                className="px-8 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-[10px] font-bold uppercase tracking-widest font-mono shadow-[0_0_20px_rgba(var(--primary),0.3)] transition-all rounded-sm flex items-center gap-3 group"
+              >
+                {isArchiving ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Committing...
+                  </>
+                ) : (
+                  <>
+                    Archive_Project
+                    <Zap className="w-3 h-3 group-hover:fill-current transition-all" />
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
