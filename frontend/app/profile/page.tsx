@@ -1,9 +1,9 @@
 "use client"
 
 import React, { useEffect, useState, useRef } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, Mail, Shield, Zap, Clock, Code, Database, Settings, ShieldCheck, ChevronRight, Share2, Activity, Terminal } from 'lucide-react'
+import { Mail, Zap, Clock, Code, Settings, ShieldCheck, Activity, LogOut, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 
 interface LogEntry {
@@ -21,23 +21,27 @@ export default function ProfilePage() {
         favoriteModel: 'Gemini 1.5 Flash'
     })
     const [loading, setLoading] = useState(true)
-    const [logs, setLogs] = useState<LogEntry[]>([
-        { id: '1', type: 'SUCCESS', message: 'User authentication verified via Google', timestamp: new Date().toLocaleTimeString() },
-        { id: '2', type: 'SUCCESS', message: 'Database connection established: Supabase_DB', timestamp: new Date().toLocaleTimeString() },
-        { id: '3', type: 'INFO', message: 'System readiness: 99.8%', timestamp: new Date().toLocaleTimeString() }
-    ])
+    const [isDeleting, setIsDeleting] = useState(false)
+    const [logs, setLogs] = useState<LogEntry[]>([])
     const logEndRef = useRef<HTMLDivElement>(null)
 
-    // Real-time log simulator
+    // Daily activity log simulator + Initial logs (Fixes hydration mismatch)
     useEffect(() => {
+        // Set initial logs after mount to avoid SSR mismatch
+        setLogs([
+            { id: '1', type: 'SUCCESS', message: 'Successfully signed in as ' + (session?.user?.name || 'User'), timestamp: new Date().toLocaleTimeString() },
+            { id: '2', type: 'SUCCESS', message: 'Secure connection to database established', timestamp: new Date().toLocaleTimeString() },
+            { id: '3', type: 'INFO', message: 'Ready to create new projects', timestamp: new Date().toLocaleTimeString() }
+        ])
+
         const potentialLogs = [
-            { type: 'SYSTEM', message: 'API latency nominal: 42ms' },
-            { type: 'DB', message: 'Buffer sync successful for active_session' },
-            { type: 'AUTH', message: 'Session token refreshed' },
-            { type: 'SYSTEM', message: 'Garbage collection phase 3 complete' },
-            { type: 'DB', message: 'Heartbeat detected: Postgres_Node_01' },
-            { type: 'SUCCESS', message: 'Cache manifest updated' },
-            { type: 'INFO', message: 'Ingress traffic: 1.2 KB/s' }
+            { type: 'SUCCESS', message: 'Successfully saved project to your archives' },
+            { type: 'INFO', message: 'New responsive UI generated with Gemini' },
+            { type: 'SUCCESS', message: 'Exported code successfully' },
+            { type: 'INFO', message: 'Preview window updated with latest changes' },
+            { type: 'SYSTEM', message: 'Session data safely backed up' },
+            { type: 'SUCCESS', message: 'Dashboard statistics updated' },
+            { type: 'INFO', message: 'AI model optimized for your connection' }
         ]
 
         const interval = setInterval(() => {
@@ -52,7 +56,7 @@ export default function ProfilePage() {
         }, 4000)
 
         return () => clearInterval(interval)
-    }, [])
+    }, [session?.user?.name])
 
     useEffect(() => {
         if (!session?.user?.email) return
@@ -77,6 +81,29 @@ export default function ProfilePage() {
 
         fetchStats()
     }, [session?.user?.email])
+
+    const handleDeleteAccount = async () => {
+        const confirmed = confirm("WARNING: This will permanently delete your entire Project History and all saved data. This action CANNOT be undone. Are you sure you want to delete your account data permanently?");
+
+        if (confirmed) {
+            setIsDeleting(true);
+            try {
+                const res = await fetch('/api/auth/delete-account', { method: 'DELETE' });
+                if (res.ok) {
+                    alert("Account data deleted successfully. You will now be signed out.");
+                    localStorage.clear();
+                    signOut({ callbackUrl: '/' });
+                } else {
+                    alert("Failed to delete account data. Please try again later.");
+                }
+            } catch (err) {
+                console.error("Deletion error:", err);
+                alert("An error occurred during deletion.");
+            } finally {
+                setIsDeleting(false);
+            }
+        }
+    }
 
     if (!session) {
         return (
@@ -171,10 +198,10 @@ export default function ProfilePage() {
                             </div>
                         </motion.section>
 
-                        {/* System Log Simulator */}
+                        {/* Activity Log Simulator */}
                         <motion.section variants={itemVariants} className="space-y-4">
                             <h2 className="text-xs font-bold font-mono text-muted-foreground flex items-center gap-2 uppercase tracking-[0.3em]">
-                                <Activity className="w-4 h-4" /> System_Access_Logs
+                                <Activity className="w-4 h-4" /> Recent_Activity_Logs
                                 <div className="w-2 h-2 bg-primary rounded-full animate-ping ml-2"></div>
                             </h2>
                             <div className="bg-black/95 border border-primary/20 p-6 rounded-sm font-mono text-[11px] h-[240px] overflow-hidden relative shadow-2xl">
@@ -197,7 +224,7 @@ export default function ProfilePage() {
                                                             log.type === 'AUTH' ? 'text-yellow-500' :
                                                                 'text-blue-500'
                                                 )}>
-                                                    [{log.type}]
+                                                    [{log.type === 'SYSTEM' ? 'SYNC' : log.type === 'INFO' ? 'USER' : log.type}]
                                                 </span>
                                                 <span className="text-primary/80">{log.message}</span>
                                             </motion.div>
@@ -219,26 +246,24 @@ export default function ProfilePage() {
                         >
                             <h3 className="text-xs font-bold font-mono text-foreground uppercase tracking-widest border-l-2 border-primary pl-4">Account_Settings</h3>
 
-                            <div className="space-y-3">
-                                <button className="w-full flex items-center justify-between px-4 py-3 bg-secondary/30 hover:bg-secondary/50 border border-border rounded-sm transition-all text-xs font-mono uppercase tracking-widest group">
-                                    <div className="flex items-center gap-3">
-                                        <Settings className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                                        Preferences
-                                    </div>
-                                    <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                            <div className="space-y-6">
+                                <button
+                                    onClick={handleDeleteAccount}
+                                    disabled={isDeleting}
+                                    className="w-full h-14 flex items-center justify-center gap-3 bg-red-600 border border-red-500 text-white hover:bg-red-700 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)] transition-all text-sm font-bold font-mono uppercase tracking-[0.2em] disabled:opacity-50 relative overflow-hidden group/delete"
+                                >
+                                    <div className="absolute inset-0 bg-white/10 translate-y-full group-hover/delete:translate-y-0 transition-transform duration-300"></div>
+                                    <Trash2 className="w-5 h-5 relative z-10" />
+                                    <span className="relative z-10">{isDeleting ? 'Deleting...' : 'Delete_Account_Data'}</span>
                                 </button>
 
-                                <button className="w-full h-12 flex items-center justify-center bg-destructive/80 border border-destructive/30 text-white hover:bg-destructive shadow-[0_0_15px_rgba(var(--destructive),0.2)] transition-all text-xs font-bold font-mono uppercase tracking-[0.2em]">
-                                    Deactivate_Terminal
-                                </button>
+                                <div className="p-4 border border-red-500/30 rounded-sm bg-red-500/5 animate-pulse-slow">
+                                    <p className="text-[11px] font-mono text-red-500 uppercase leading-relaxed text-center font-black tracking-tight">
+                                        CRITICAL: Deleting account data is permanent. All history and projects will be purged from the database.
+                                    </p>
+                                </div>
                             </div>
                         </motion.div>
-
-                        <div className="p-8 border border-border/50 rounded-sm bg-[radial-gradient(circle_at_top_right,rgba(6,182,212,0.02),transparent)] backdrop-blur-sm">
-                            <p className="text-[10px] font-mono text-muted-foreground uppercase leading-relaxed text-center">
-                                Warning: Modifying system-level configuration may result in session instability. Always backup critical source code before applying experimental patches.
-                            </p>
-                        </div>
                     </div>
                 </div>
             </div>

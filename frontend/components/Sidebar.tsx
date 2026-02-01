@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Zap, LayoutGrid, Clock, Settings, Sun, Moon, User } from 'lucide-react'
+import { Zap, LayoutGrid, Clock, Settings, Sun, Moon, User, LogOut } from 'lucide-react'
 import { signOut, useSession } from 'next-auth/react'
 import { useTheme } from "next-themes"
 import { motion, AnimatePresence } from "framer-motion"
@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils"
 const navItems = [
     { label: 'Workspace', icon: LayoutGrid, href: '/dashboard' },
     { label: 'Archived_Logs', icon: Clock, href: '/history' },
-    { label: 'Configuration', icon: Settings, href: '#' },
 ]
 
 export default function Sidebar() {
@@ -150,9 +149,6 @@ export default function Sidebar() {
                                         <span className="text-xs font-bold text-foreground font-mono truncate group-hover/user:text-primary transition-colors">
                                             {session.user?.name || "User_Session"}
                                         </span>
-                                        <span className="text-[10px] text-muted-foreground/50 font-mono uppercase tracking-widest">
-                                            [ ACCESS_GRANTED ]
-                                        </span>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -186,8 +182,8 @@ export default function Sidebar() {
                                         onClick={() => signOut()}
                                         className="w-full flex items-center gap-3 px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:text-red-400 hover:bg-red-400/5 transition-all"
                                     >
-                                        <Zap className="w-3 h-3" />
-                                        Disconnect
+                                        <LogOut className="w-3 h-3" />
+                                        Sign Out
                                     </button>
                                     <div className="absolute top-0 right-0 p-1 opacity-20">
                                         <div className="w-1 h-1 bg-primary"></div>

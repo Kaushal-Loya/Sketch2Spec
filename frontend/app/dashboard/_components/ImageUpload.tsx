@@ -10,10 +10,19 @@ export default function ImageUpload() {
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' | 'info' } | null>(null)
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
-  const [selectedModel, setSelectedModel] = useState<string>("gemini-flash-latest")
+  const [selectedModel, setSelectedModel] = useState<string>("gemini-1.5-flash")
 
   const inputRef = useRef<HTMLInputElement | null>(null)
   const router = useRouter()
+
+  // SYNC WITH SETTINGS
+  React.useEffect(() => {
+    const savedModel = localStorage.getItem("terminal_model")
+    if (savedModel) {
+      // Map display names to technical IDs if necessary, or use as is
+      setSelectedModel(savedModel === "gemini-1.5-pro" ? "gemini-1.5-pro" : "gemini-1.5-flash")
+    }
+  }, [])
 
   const onImageSelect = (event: ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files
@@ -79,7 +88,29 @@ export default function ImageUpload() {
       sessionStorage.setItem("lastUploadedImageUrl", uploadJson.secure_url)
       sessionStorage.setItem("lastSelectedModel", selectedModel)
       sessionStorage.removeItem("namingModalShown") // RESET PROTOCOL FOR NEW GEN
-      setMessage({ text: "COMPILATION_COMPLETE: READY", type: 'success' })
+
+      // AUTO-SAVE LOGIC
+      const autoSave = localStorage.getItem("terminal_autosave") !== "false"
+      if (autoSave) {
+        try {
+          await fetch("/api/history", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: "Auto-Generated Sequence",
+              current_code: aiJson.code,
+              image_url: uploadJson.secure_url,
+              model: selectedModel
+            })
+          })
+          setMessage({ text: "COMPILATION_COMPLETE: AUTO-SAVED TO ARCHIVES", type: 'success' })
+        } catch (saveErr) {
+          console.error("Auto-save failed:", saveErr)
+          setMessage({ text: "COMPILATION_COMPLETE: READY (AUTO-SAVE FAILED)", type: 'success' })
+        }
+      } else {
+        setMessage({ text: "COMPILATION_COMPLETE: READY", type: 'success' })
+      }
 
     } catch (err: any) {
       console.error(err)
