@@ -65,13 +65,13 @@ export default function Sidebar() {
                     className="w-full flex items-center justify-between px-3 py-2 bg-secondary/50 hover:bg-secondary border border-border rounded-sm group transition-all"
                 >
                     <span className="text-[10px] font-mono uppercase text-muted-foreground group-hover:text-foreground">
-                        UI_Theme: {mounted ? (theme === 'dark' ? 'Dark_Mode' : 'Light_Mode') : '...'}
+                        {mounted ? (theme === 'dark' ? 'Light Mode' : 'Dark Mode') : '...'}
                     </span>
                     {mounted ? (
                         theme === 'dark' ? (
-                            <Moon className="w-3 h-3 text-primary" />
-                        ) : (
                             <Sun className="w-3 h-3 text-orange-500" />
+                        ) : (
+                            <Moon className="w-3 h-3 text-primary" />
                         )
                     ) : (
                         <div className="w-3 h-3 bg-muted/50 rounded-full animate-pulse" />

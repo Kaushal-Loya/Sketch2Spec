@@ -113,16 +113,16 @@ export default function Sidebar() {
                                 exit={{ opacity: 0, x: -10 }}
                                 className="text-[10px] font-mono uppercase text-muted-foreground group-hover:text-foreground"
                             >
-                                Theme
+                                {mounted ? (theme === 'dark' ? 'Light Mode' : 'Dark Mode') : '...'}
                             </motion.span>
                         )}
                     </AnimatePresence>
 
                     {mounted ? (
                         theme === 'dark' ? (
-                            <Moon className="w-3 h-3 text-primary flex-shrink-0" />
-                        ) : (
                             <Sun className="w-3 h-3 text-orange-500 flex-shrink-0" />
+                        ) : (
+                            <Moon className="w-3 h-3 text-primary flex-shrink-0" />
                         )
                     ) : (
                         <div className="w-3 h-3 bg-muted/50 rounded-full animate-pulse flex-shrink-0" />
