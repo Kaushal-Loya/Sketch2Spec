@@ -9,12 +9,12 @@ const MobileHeader = () => (
   <header className="md:hidden sticky top-0 bg-background/90 backdrop-blur-md border-b border-border px-6 h-16 flex items-center justify-between z-50">
     <div className="flex items-center gap-3">
       <div className="w-8 h-8 flex items-center justify-center bg-primary/10 border border-primary/20 rounded-sm">
-        <span className="text-primary font-bold text-xs">T_01</span>
+        <span className="text-primary font-bold text-xs">App</span>
       </div>
-      <span className="text-sm font-bold tracking-[0.2em] text-foreground uppercase font-mono">Terminal_01</span>
+      <span className="text-sm font-bold tracking-[0.2em] text-foreground uppercase font-mono">App Console</span>
     </div>
     <Link href="/history" className="text-[10px] font-bold text-primary border border-primary/50 px-3 py-1 rounded-sm uppercase bg-primary/5">
-      Archives
+      History
     </Link>
   </header>
 )
@@ -30,12 +30,12 @@ export default function DashboardPage() {
           <div className="mb-12 border-l-2 border-primary/50 pl-6 relative">
             <Link href="/" className="inline-flex items-center gap-2 text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors mb-4 group uppercase tracking-widest font-mono">
               <ChevronLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" />
-              Disconnect
+              Return
             </Link>
 
             <div className="flex items-center gap-4 mb-2">
               <h1 className="text-3xl md:text-4xl font-bold text-foreground tracking-tight uppercase">
-                Workspace
+                New Project
               </h1>
               <Cpu className="w-6 h-6 text-primary animate-pulse" />
             </div>

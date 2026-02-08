@@ -29,11 +29,11 @@ export default function LandingPage() {
             <div className="space-y-3 relative">
               <div className={`inline-flex items-center gap-2 px-3 py-1 border border-cyan-900/50 bg-cyan-950/30 text-cyan-400 text-[10px] font-mono tracking-[0.2em] transform transition-all duration-700 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
                 <span className="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></span>
-                VISION_CORE :: ONLINE
+                SYSTEM ONLINE
               </div>
 
               <h1 className={`text-6xl md:text-8xl font-bold tracking-tighter leading-[0.9] text-white transform transition-all duration-700 delay-100 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-                ARCHITECT <br />
+                BUILD <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600">YOUR VISION</span>
               </h1>
 
@@ -46,7 +46,7 @@ export default function LandingPage() {
               <div className={`flex flex-wrap gap-4 pt-4 transform transition-all duration-700 delay-300 ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
                 <Link href="/dashboard" className="group relative px-8 py-4 bg-cyan-500 text-black font-bold text-sm tracking-widest uppercase hover:bg-cyan-400 transition-colors shadow-[0_0_20px_rgba(6,182,212,0.3)] hover:shadow-[0_0_30px_rgba(6,182,212,0.5)]">
                   <span className="relative z-10 flex items-center gap-2">
-                    Execute Sequence <Target className="w-4 h-4" />
+                    Start Project <Target className="w-4 h-4" />
                   </span>
                 </Link>
               </div>
@@ -70,7 +70,7 @@ export default function LandingPage() {
                     <div className="w-3 h-3 rounded-full bg-red-500/50"></div>
                     <div className="w-3 h-3 rounded-full bg-yellow-500/50"></div>
                     <div className="w-3 h-3 rounded-full bg-green-500/50"></div>
-                    <div className="ml-auto font-mono text-[10px] text-cyan-600">PREVIEW_MODE</div>
+                    <div className="ml-auto font-mono text-[10px] text-cyan-600">Preview Mode</div>
                   </div>
 
                   <div className="flex-1 relative p-8">
@@ -100,17 +100,17 @@ export default function LandingPage() {
             {[
               {
                 icon: <Zap className="w-6 h-6 text-cyan-400" />,
-                title: "FAST_COMPILATION",
+                title: "Fast Compilation",
                 desc: "Generate React components in < 3000ms. High-speed inference pipelines."
               },
               {
                 icon: <Code2 className="w-6 h-6 text-cyan-400" />,
-                title: "SYNTAX_PURITY",
+                title: "Clean Syntax",
                 desc: "Clean, semantic JSX. Tailwind CSS utility classes auto-mapped."
               },
               {
                 icon: <Terminal className="w-6 h-6 text-cyan-400" />,
-                title: "LIVE_SANDBOX",
+                title: "Live Sandbox",
                 desc: "Instant isolated rendering environment. Hot-reload enabled."
               }
             ].map((feature, i) => (

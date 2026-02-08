@@ -90,7 +90,7 @@ export default function HistoryPage() {
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
                     <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-primary font-mono text-xs uppercase tracking-widest">Loading_Archives...</p>
+                    <p className="text-primary font-mono text-xs uppercase tracking-widest">Loading History...</p>
                 </div>
             </div>
         )
@@ -106,10 +106,10 @@ export default function HistoryPage() {
                         className="flex items-center gap-2 group text-muted-foreground hover:text-primary transition-all font-bold text-xs uppercase tracking-widest font-mono"
                     >
                         <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" />
-                        <span>Dashboard</span>
+                        <span>Back to Dashboard</span>
                     </Link>
                     <div className="h-4 w-px bg-border hidden sm:block" />
-                    <h1 className="text-sm font-bold text-foreground uppercase tracking-widest font-mono">Project_Archives</h1>
+                    <h1 className="text-sm font-bold text-foreground uppercase tracking-widest font-mono">Project History</h1>
                 </div>
             </header>
 
@@ -117,7 +117,7 @@ export default function HistoryPage() {
                 {history.length === 0 ? (
                     <div className="text-center py-20 border border-dashed border-border rounded-lg bg-card/50">
                         <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                        <h3 className="text-lg font-bold text-muted-foreground mb-2 font-mono uppercase">Log_Empty</h3>
+                        <h3 className="text-lg font-bold text-muted-foreground mb-2 font-mono uppercase">No History Found</h3>
                         <p className="text-muted-foreground text-sm max-w-md mx-auto">No generations found in the archive. Return to the dashboard to initiate a new sequence.</p>
                     </div>
                 ) : (
@@ -169,7 +169,7 @@ export default function HistoryPage() {
                                                 setDeletingId(item.id);
                                             }}
                                             className="absolute top-0 right-0 p-1 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
-                                            title="Delete_Project"
+                                            title="Delete Project"
                                         >
                                             <Trash2 className="w-3.5 h-3.5" />
                                         </button>
@@ -203,7 +203,7 @@ export default function HistoryPage() {
                     <div className="bg-card border border-destructive/30 shadow-[0_0_50px_rgba(var(--destructive),0.1)] max-w-sm w-full rounded-sm overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="bg-destructive/10 border-b border-destructive/20 p-4 flex items-center gap-3">
                             <ShieldAlert className="w-5 h-5 text-destructive" />
-                            <h3 className="text-xs font-bold text-destructive uppercase tracking-widest font-mono">Protocol: Delete_Confirmation</h3>
+                            <h3 className="text-xs font-bold text-destructive uppercase tracking-widest font-mono">Confirm Deletion</h3>
                         </div>
                         <div className="p-6">
                             <p className="text-sm font-mono text-foreground leading-relaxed">
@@ -215,13 +215,13 @@ export default function HistoryPage() {
                                 onClick={() => setDeletingId(null)}
                                 className="px-4 py-2 border border-border hover:bg-muted text-[10px] font-bold uppercase tracking-widest font-mono text-muted-foreground hover:text-foreground transition-all rounded-sm"
                             >
-                                Cancel_Action
+                                Cancel
                             </button>
                             <button
                                 onClick={() => handleDelete(deletingId)}
                                 className="px-4 py-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground text-[10px] font-bold uppercase tracking-widest font-mono shadow-md hover:shadow-lg transition-all rounded-sm"
                             >
-                                Execute_Purge
+                                Delete
                             </button>
                         </div>
                     </div>

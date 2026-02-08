@@ -18,7 +18,7 @@ export default function Navbar() {
                     </div>
                     <div className="flex flex-col">
                         <span className="text-xl font-bold tracking-[0.1em] text-cyan-50 uppercase text-white">Sketch2Spec</span>
-                        <span className="text-[10px] text-cyan-600 font-mono tracking-widest leading-none">SYSTEM.V1.2</span>
+                        <span className="text-[10px] text-cyan-600 font-mono tracking-widest leading-none">V1.2</span>
                     </div>
                 </Link>
 
@@ -26,25 +26,25 @@ export default function Navbar() {
                     {!session ? (
                         <>
                             <button
-                                onClick={() => signIn('google')}
+                                onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
                                 className="hidden md:block text-sm font-mono text-cyan-600 hover:text-cyan-400 transition-colors uppercase tracking-widest"
                             >
-                                [ Sign_In ]
+                                Log In
                             </button>
                             <button
-                                onClick={() => signIn('google')}
+                                onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
                                 className="group relative px-6 py-2 bg-cyan-950 border border-cyan-800 hover:border-cyan-500 transition-all overflow-hidden rounded-sm"
                             >
                                 <div className="absolute inset-0 bg-cyan-500/10 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></div>
                                 <span className="relative z-10 text-cyan-400 font-mono text-xs font-bold tracking-widest uppercase flex items-center gap-2">
-                                    Sign_Up <ArrowRight className="w-3 h-3" />
+                                    Register <ArrowRight className="w-3 h-3" />
                                 </span>
                             </button>
                         </>
                     ) : (
                         <>
                             <Link href="/dashboard" className="px-6 py-2 bg-cyan-600/10 border border-cyan-500 text-cyan-400 font-mono text-xs hover:bg-cyan-600 hover:text-white transition-all uppercase tracking-widest">
-                                ENTER_CONSOLE
+                                Go to Dashboard
                             </Link>
                             <div className="flex items-center gap-2">
                                 <span className="text-xs text-cyan-400 font-mono">{session.user?.name}</span>
@@ -52,7 +52,7 @@ export default function Navbar() {
                                     onClick={() => signOut({ callbackUrl: "/" })}
                                     className="text-xs font-mono text-cyan-600 hover:text-cyan-400 transition-colors uppercase tracking-widest"
                                 >
-                                    Sign Out
+                                    Log Out
                                 </button>
                             </div>
                         </>

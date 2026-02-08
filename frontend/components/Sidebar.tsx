@@ -10,8 +10,8 @@ import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 
 const navItems = [
-    { label: 'Workspace', icon: LayoutGrid, href: '/dashboard' },
-    { label: 'Archived_Logs', icon: Clock, href: '/history' },
+    { label: 'Dashboard', icon: LayoutGrid, href: '/dashboard' },
+    { label: 'History', icon: Clock, href: '/history' },
 ]
 
 export default function Sidebar() {
@@ -49,7 +49,7 @@ export default function Sidebar() {
                             exit={{ opacity: 0, x: -10 }}
                             className="text-sm font-bold tracking-[0.2em] text-foreground uppercase font-mono"
                         >
-                            Terminal_01
+                            App Console
                         </motion.span>
                     )}
                 </AnimatePresence>
@@ -113,7 +113,7 @@ export default function Sidebar() {
                                 exit={{ opacity: 0, x: -10 }}
                                 className="text-[10px] font-mono uppercase text-muted-foreground group-hover:text-foreground"
                             >
-                                UI_Theme
+                                Theme
                             </motion.span>
                         )}
                     </AnimatePresence>
@@ -147,7 +147,7 @@ export default function Sidebar() {
                                         className="flex flex-col overflow-hidden"
                                     >
                                         <span className="text-xs font-bold text-foreground font-mono truncate group-hover/user:text-primary transition-colors">
-                                            {session.user?.name || "User_Session"}
+                                            {session.user?.name || "User Session"}
                                         </span>
                                     </motion.div>
                                 )}
@@ -176,14 +176,14 @@ export default function Sidebar() {
                                         className="flex items-center gap-3 px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
                                     >
                                         <User className="w-3 h-3" />
-                                        Profile_ID
+                                        Profile
                                     </Link>
                                     <button
                                         onClick={() => signOut({ callbackUrl: "/" })}
                                         className="w-full flex items-center gap-3 px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground hover:text-red-400 hover:bg-red-400/5 transition-all"
                                     >
                                         <LogOut className="w-3 h-3" />
-                                        Sign Out
+                                        Log Out
                                     </button>
                                     <div className="absolute top-0 right-0 p-1 opacity-20">
                                         <div className="w-1 h-1 bg-primary"></div>

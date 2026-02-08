@@ -42,7 +42,7 @@ export default function ImageUpload() {
   const onConvert = async () => {
     if (!file) return
     setUploading(true)
-    setMessage({ text: "SYSTEM_INIT: ANALYZING INPUT...", type: 'info' })
+    setMessage({ text: "Analyzing input...", type: 'info' })
 
     try {
       const signRes = await fetch("/api/cloudinary/sign", {
@@ -68,7 +68,7 @@ export default function ImageUpload() {
       const uploadJson = await uploadRes.json()
       if (!uploadRes.ok) throw new Error(uploadJson?.error?.message || "Cloud transfer failed")
 
-      setMessage({ text: "EXTRACTING_VECTORS: PROCESSING...", type: 'info' })
+      setMessage({ text: "Processing image...", type: 'info' })
 
       const aiRes = await fetch("/api/ai/generate", {
         method: "POST",
@@ -103,13 +103,13 @@ export default function ImageUpload() {
               model: selectedModel
             })
           })
-          setMessage({ text: "COMPILATION_COMPLETE: AUTO-SAVED TO ARCHIVES", type: 'success' })
+          setMessage({ text: "Complete: Saved to History", type: 'success' })
         } catch (saveErr) {
           console.error("Auto-save failed:", saveErr)
-          setMessage({ text: "COMPILATION_COMPLETE: READY (AUTO-SAVE FAILED)", type: 'success' })
+          setMessage({ text: "Complete: Ready (Auto-save failed)", type: 'success' })
         }
       } else {
-        setMessage({ text: "COMPILATION_COMPLETE: READY", type: 'success' })
+        setMessage({ text: "Generation Complete", type: 'success' })
       }
 
     } catch (err: any) {
@@ -138,7 +138,7 @@ export default function ImageUpload() {
                 <ScanLine className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-foreground tracking-widest uppercase font-mono">Input Source</h2>
+                <h2 className="text-lg font-bold text-foreground tracking-widest uppercase font-mono">Input</h2>
               </div>
             </div>
             {previewUrl && (
@@ -146,7 +146,7 @@ export default function ImageUpload() {
                 onClick={() => { setPreviewUrl(null); setFile(null); setGeneratedCode(null); setMessage(null); }}
                 className="text-xs font-mono text-muted-foreground hover:text-destructive transition-colors flex items-center gap-2 uppercase tracking-widest border border-border px-3 py-1 bg-secondary/50 hover:bg-destructive/10 hover:border-destructive/50"
               >
-                <X className="w-3 h-3" /> Terminate
+                <X className="w-3 h-3" /> Clear
               </button>
             )}
           </div>
@@ -162,12 +162,12 @@ export default function ImageUpload() {
                 <div className="w-20 h-20 mx-auto mb-6 bg-secondary/50 border border-primary/30 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(var(--primary),0.2)] group-hover/drop:scale-110 group-hover/drop:border-primary transition-all duration-300">
                   <Upload className="w-8 h-8 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-2 tracking-tight font-mono">UPLOAD_WIREFRAME</h3>
+                <h3 className="text-xl font-bold text-foreground mb-2 tracking-tight font-mono">Upload Wireframe</h3>
                 <p className="text-muted-foreground font-mono text-xs mb-8 max-w-[200px] mx-auto uppercase tracking-widest">
                   Supported: PNG, JPG, WEBP
                 </p>
                 <div className="inline-flex items-center gap-2 px-8 py-3 bg-primary text-primary-foreground font-bold uppercase tracking-widest text-xs hover:bg-primary/90 transition-colors">
-                  Select_Files.exe
+                  Select Files
                 </div>
               </div>
               <input ref={inputRef} type="file" accept="image/*" hidden onChange={onImageSelect} />
@@ -189,7 +189,7 @@ export default function ImageUpload() {
                 onClick={() => inputRef.current?.click()}
                 className="w-full py-4 bg-secondary/30 hover:bg-secondary/50 border border-border text-xs font-mono text-primary transition-all flex items-center justify-center gap-2 uppercase tracking-widest hover:border-primary/50"
               >
-                <Layers className="w-4 h-4" /> Re-Initialize_Input
+                <Layers className="w-4 h-4" /> Start Over
               </button>
             </div>
           )}
@@ -205,7 +205,7 @@ export default function ImageUpload() {
                 <Cpu className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-foreground tracking-widest uppercase font-mono">Processing_Unit</h2>
+                <h2 className="text-lg font-bold text-foreground tracking-widest uppercase font-mono">Model</h2>
                 <div className="flex gap-1 mt-1">
                   <div className="w-1 h-1 bg-primary rounded-full"></div>
                   <div className="w-1 h-1 bg-primary rounded-full"></div>
@@ -217,12 +217,12 @@ export default function ImageUpload() {
             <div className="space-y-6">
               <div className="p-6 rounded-sm bg-card border border-border shadow-sm">
                 <label className="block text-[10px] font-bold text-primary uppercase tracking-widest mb-4 font-mono">
-                  Select_Model_Architecture
+                  Select Model
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    { id: 'gemini-flash-latest', name: 'TURBO_MODE', desc: 'Speed: Max' },
-                    { id: 'gemini-pro-latest', name: 'PRECISION', desc: 'Detail: Max' }
+                    { id: 'gemini-flash-latest', name: 'Fast', desc: 'Speed: Max' },
+                    { id: 'gemini-pro-latest', name: 'Quality', desc: 'Detail: Max' }
                   ].map((m) => (
                     <button
                       key={m.id}
@@ -249,12 +249,12 @@ export default function ImageUpload() {
                   {uploading ? (
                     <div className="flex items-center gap-3">
                       <div className="w-4 h-4 border-2 border-primary-foreground/20 border-t-primary-foreground rounded-full animate-spin" />
-                      <span className="font-mono text-sm">SYNTHESIZING...</span>
+                      <span className="font-mono text-sm">Generating...</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 relative z-10">
                       <WandSparkles className="w-5 h-5" />
-                      <span className="font-mono text-sm">INITIATE_SEQUENCE</span>
+                      <span className="font-mono text-sm">Generate Code</span>
                     </div>
                   )}
                   {!uploading && !(!file) && <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>}
@@ -266,7 +266,7 @@ export default function ImageUpload() {
                 >
                   <div className="flex items-center gap-2 font-mono uppercase tracking-widest font-bold text-sm">
                     <Eye className="w-5 h-5" />
-                    <span>ACCESS_CODE</span>
+                    <span>View Code</span>
                   </div>
                 </button>
               )}

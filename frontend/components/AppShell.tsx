@@ -34,7 +34,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                             className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground hover:text-primary transition-all font-mono uppercase tracking-[0.2em] group"
                         >
                             <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" />
-                            [ Back_To_Home ]
+                            Back to Home
                         </Link>
                     </div>
                 )}
