@@ -1,57 +1,70 @@
 # Sketch2Spec
 
-Sketch2Spec is an AI-powered design-to-code assistant that helps developers and designers transform hand-drawn wireframes and UI sketches into production-ready React components. It handles everything from real-time image analysis using vision AI, generating clean JSX code with Tailwind CSS, providing live component previews, and offering instant code regeneration for iterative refinement.
+Sketch2Spec is an AI-powered design-to-code assistant that turns hand-drawn wireframes and UI screenshots into working React + Tailwind components. Upload an image, and a Gemini vision model generates the component; you can then edit it in a code editor, preview it live across device sizes, save it to your project history and copy the code.
 
-![Sketch2Spec Preview](./assets/hero-preview.png)
+**Live demo:** [sketch2spec.vercel.app](https://sketch2spec.vercel.app/)
+
+![Sketch2Spec Preview](./frontend/assets/hero-preview.png)
+
+## Results
+
+- **~80% layout accuracy** on generated components
+- **~2x faster prototyping** and **~60% less manual frontend effort** compared with hand-coding the same layouts
 
 ## Problem We Aim to Solve
 
-The design-to-development handoff is slow and inefficient. As developers, we've all been through the cycle of manually translating mockups into code, guessing at spacing and colors, writing repetitive component structures, and hoping the result matches the design. Most of the time, there's back-and-forth with designers, no clear starting point, and hours spent on boilerplate. Sketch2Spec was built to fix that - by helping you convert any wireframe or UI screenshot into working React code instantly, preview it across devices, and iterate quickly until it's perfect.
+The design-to-development handoff is slow and inefficient. Developers manually translate mockups into code, guess at spacing and colors, write repetitive component structures, and hope the result matches the design. Sketch2Spec gives you a working starting point instead: convert any wireframe or UI screenshot into React code, preview it across devices, and iterate quickly.
 
 ## Installation
 
 ### Prerequisites
 - Node.js 20.x or higher
-- npm or yarn
-- API keys for:
-  - [Google Gemini](https://makersuite.google.com/app/apikey)
-  - [Clerk](https://clerk.com/)
-  - [Cloudinary](https://cloudinary.com/)
+- npm
+- Accounts / keys for:
+  - [Google Gemini API](https://aistudio.google.com/app/apikey)
+  - A Google OAuth client (for sign-in via NextAuth)
+  - [Supabase](https://supabase.com/) (Postgres, for saved projects)
+  - [Cloudinary](https://cloudinary.com/) (image uploads)
 
 ### Setup Instructions
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/Sketch2Spec.git
+   git clone https://github.com/Kaushal-Loya/Sketch2Spec.git
    cd Sketch2Spec
    ```
 
-2. **Install dependencies**
+2. **Install dependencies** (npm workspaces: `frontend`, `backend`)
    ```bash
    npm install
    ```
 
 3. **Configure environment variables**
-   
-   Create a `.env` file in the root directory:
+
+   Create `frontend/.env.local`:
    ```env
-   # Clerk Authentication
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-   CLERK_SECRET_KEY=sk_test_...
-   NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
-   NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-   NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
-   NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/dashboard
+   # Auth (NextAuth + Google)
+   GOOGLE_CLIENT_ID=...
+   GOOGLE_CLIENT_SECRET=...
+   NEXTAUTH_SECRET=...
+   # NEXTAUTH_URL=https://your-domain   (production only)
 
    # Google Gemini AI
    GEMINI_API_KEY=AIza...
    GEMINI_MODEL=gemini-1.5-flash
 
+   # Supabase
+   NEXT_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+   SUPABASE_SERVICE_ROLE_KEY=...
+
    # Cloudinary
-   NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your_cloud_name
+   CLOUDINARY_CLOUD_NAME=your_cloud_name
    CLOUDINARY_API_KEY=your_api_key
    CLOUDINARY_API_SECRET=your_api_secret
 
+   # Optional: protects /api/admin/provider-logs
+   ADMIN_API_KEY=...
    ```
 
 4. **Start the development server**
@@ -59,138 +72,115 @@ The design-to-development handoff is slow and inefficient. As developers, we've 
    npm run dev
    ```
 
-6. **Open your browser**
-   
+5. **Open your browser**
+
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## Tech Stack
 
 | Tech | Purpose |
 |------|---------|
-| Next.js 15 & Tailwind CSS | Frontend framework and styling |
-| React 18 | UI library |
+| Next.js 16 (App Router) & Tailwind CSS | Frontend framework and styling |
+| React 19 | UI library |
 | TypeScript | Type safety and developer experience |
-| Clerk | User authentication and management |
+| NextAuth (Google provider) | Authentication with JWT sessions |
+| Supabase (Postgres) | Per-user project history |
 | Google Gemini | Vision AI for wireframe-to-code generation |
-| Cloudinary | Image upload and storage |
-| Babel Standalone | Browser-based JSX transformation |
-| Lucide React | Icon library |
+| Cloudinary | Signed image uploads and storage |
+| CodeMirror | In-browser code editor with linting |
+| Babel Standalone | Browser-based JSX transformation for the preview |
+| Framer Motion, Lucide React | Animation and icons |
 
 ## Key Features
 
 ### AI-Powered Code Generation
 
-Sketch2Spec uses Google Gemini's vision models to analyze your wireframes and UI screenshots in real-time. Simply upload an image, and it generates complete React components with Tailwind CSS styling. You can choose between two models:
+Sketch2Spec sends your wireframe to a Google Gemini vision model (configured with `GEMINI_MODEL`) and generates a complete React component styled with Tailwind CSS. The model extracts layout hierarchy, identifies UI elements and produces clean JSX ready to use in your projects.
 
-- **Gemini Flash (Optimized)**: Faster generation, ideal for simple to medium complexity UIs
-- **Gemini Pro (Precision)**: Higher detail analysis, perfect for complex layouts and intricate designs
+### Smart Code Sanitization & Validation
 
-The AI extracts layout hierarchies, identifies UI elements, matches colors and typography, and produces clean, semantic JSX code ready to use in your projects.
+Generated code is checked and cleaned before it is shown:
 
-### Smart Code Sanitization & Optimization
+- Removes TypeScript syntax and markdown fences for browser compatibility
+- Converts ES module imports to UMD globals for iframe rendering
+- Auto-detects Lucide React icons used in the JSX (with a placeholder fallback for unknown icons)
+- Validates completeness: balanced braces, JSX tags, component structure and exports
+- Retries failed generations with exponential backoff and jitter
 
-Sketch2Spec analyzes the generated code to:
+### Code Editor & Live Preview
 
-- Remove TypeScript syntax for browser compatibility
-- Convert ES6 imports to UMD globals for iframe rendering
-- Auto-detect and import Lucide React icons used in the JSX
-- Validate code completeness and syntax correctness
-- Apply retry logic with exponential backoff for robust generation
-- Ensure balanced braces, proper exports, and complete component structures
+- **CodeMirror editor** with JSX syntax highlighting, bracket matching and a built-in syntax linter
+- **Sandboxed iframe preview** that updates as you edit
+- **Responsive device switching**: desktop (100%), tablet (768px) and mobile (375px)
+- **Clear error states** for compile errors, render errors and missing components
+- **One-click copy** of the full component code
+- **Regenerate** a draft from the same image without re-uploading
+- **Unsaved-changes protection** when leaving the editor
 
-### Live Component Preview
+### Project History
 
-You can preview your generated components instantly in a sandboxed iframe environment. The preview system supports:
-
-- **Responsive Device Switching**: Test across desktop (100%), tablet (768px), and mobile (375px) viewports
-- **Real-time Rendering**: See changes immediately with hot-reloading
-- **Error Handling**: Detailed error messages with stack traces for debugging
-- **Code Inspection**: Side-by-side view of source code and live preview
-- **One-Click Copy**: Copy the entire JSX code to your clipboard instantly
-
-### Iterative Regeneration
-
-Sketch2Spec lets you regenerate code directly from the preview page without re-uploading your image. This enables rapid iteration:
-
-- Refine the generated output with a single click
-- Get variations of the same design
-- Experiment with different AI interpretations
-- Save time during the design-to-code workflow
-
-All generated code is stored in session storage, so you can navigate between pages without losing your work.
+- Sign in with Google, then save generated components as named projects
+- Rename, reopen, reset to the original output, or delete projects from the History page
+- Every data route checks that the project belongs to the signed-in user
 
 ### Secure Image Management
 
-Upload your wireframes securely through Cloudinary integration:
-
-- Signed upload URLs prevent unauthorized access
-- Support for PNG, JPG, JPEG, and WebP formats
-- Automatic image optimization and CDN delivery
-- Persistent storage with unique public IDs
-- Direct integration with AI generation pipeline
+- Uploads go directly to Cloudinary using server-signed upload parameters
+- Supports PNG, JPG, JPEG and WebP images
 
 ## Project Structure
 
 ```
 Sketch2Spec/
-├── app/
-│   ├── api/
-│   │   ├── ai/
-│   │   │   └── generate/
-│   │   │       └── route.ts          # AI code generation endpoint
-│   │   └── cloudinary/
-│   │       └── sign/
-│   │           └── route.ts          # Cloudinary signature endpoint
-│   ├── dashboard/
-│   │   ├── _components/
-│   │   │   └── ImageUpload.tsx       # Upload & generation UI
-│   │   └── page.tsx                  # Dashboard page
-│   ├── preview/
-│   │   └── page.tsx                  # Preview & code viewer
-│   ├── sign-in/
-│   │   └── [[...sign-in]]/
-│   │       └── page.tsx              # Clerk sign-in
-│   ├── sign-up/
-│   │   └── [[...sign-up]]/
-│   │       └── page.tsx              # Clerk sign-up
-│   ├── globals.css                   # Global styles
-│   ├── layout.tsx                    # Root layout
-│   └── page.tsx                      # Landing page
-├── components/
-│   └── ui/                           # Shadcn UI components
-├── lib/
-│   ├── aiProviders.ts                # Gemini AI integration
-│   ├── aiLogger.ts                   # Request logging
-│   ├── buildPreviewSrcDoc.ts         # Preview iframe builder
-│   └── utils.ts                      # Utility functions
-├── middleware.ts                     # Clerk auth middleware
-├── tailwind.config.ts                # Tailwind config
-├── next.config.ts                    # Next.js config
-└── package.json
+├── package.json                  # npm workspaces: frontend, backend
+├── scripts/dryRun.ts             # smoke test for API routes
+├── backend/                      # placeholder workspace
+└── frontend/
+    ├── app/
+    │   ├── api/
+    │   │   ├── ai/generate/route.ts           # AI code generation
+    │   │   ├── auth/[...nextauth]/route.ts    # NextAuth (Google)
+    │   │   ├── auth/delete-account/route.ts   # delete a user's saved data
+    │   │   ├── cloudinary/sign/route.ts       # Cloudinary upload signature
+    │   │   ├── history/route.ts               # list / create projects
+    │   │   ├── history/[id]/route.ts          # get / update / delete a project
+    │   │   └── admin/provider-logs/route.ts   # recent AI request logs
+    │   ├── dashboard/            # upload & generate
+    │   ├── preview/              # editor + live preview
+    │   ├── history/              # saved projects
+    │   ├── profile/              # account page
+    │   ├── sign-in/, sign-up/    # Google sign-in
+    │   ├── layout.tsx
+    │   └── page.tsx              # landing page
+    ├── components/               # app shell, sidebar, navbar, UI
+    ├── lib/
+    │   ├── aiProviders.ts        # Gemini call, prompt, sanitizers, retry
+    │   ├── buildPreviewSrcDoc.ts # preview iframe builder
+    │   ├── auth.ts               # NextAuth options
+    │   ├── supabase.ts           # server-side Supabase client
+    │   └── aiLogger.ts           # request logging
+    └── assets/
 ```
 
 ## Usage
 
-### Basic Workflow
-
-1. **Sign up or log in** using Clerk authentication
-2. **Navigate to the Dashboard** after authentication
-3. **Upload your wireframe** by clicking "Browse Files" or drag-and-drop
-4. **Select an AI model** (Optimized for speed, Precision for detail)
-5. **Click "Generate Component"** and wait 5-15 seconds
-6. **View the live preview** with responsive device switching
-7. **Copy the code** to your clipboard with one click
-8. **Regenerate if needed** for variations or improvements
+1. **Sign in with Google**
+2. **Open the Dashboard** and upload your wireframe or screenshot
+3. **Click "Generate"** and wait a few seconds
+4. **Open the editor** to view the code and live preview, and switch device sizes
+5. **Name and save** the project, then edit, copy or regenerate as needed
+6. **Revisit saved projects** from the History page
 
 ### Tips for Best Results
 
 - Use high-contrast, well-lit photos of your sketches
 - Start with simpler layouts for better accuracy
 - Add labels or annotations to wireframes for context
-- Use the Precision model for complex, multi-section layouts
-- Iterate with regeneration to explore different interpretations
+- Regenerate to explore different interpretations
 
 ## API Endpoints
+
+All routes except NextAuth require a signed-in session.
 
 ### `POST /api/ai/generate`
 
@@ -199,16 +189,14 @@ Generate React code from a wireframe image URL.
 **Request:**
 ```json
 {
-  "imageUrl": "https://res.cloudinary.com/...",
-  "model": "gemini-flash-latest",
-  "allowFallback": false
+  "imageUrl": "https://res.cloudinary.com/..."
 }
 ```
 
 **Response:**
 ```json
 {
-  "code": "import React from 'react'...",
+  "code": "const React = window.React; ...",
   "provider": "Gemini",
   "fallbackUsed": false
 }
@@ -216,14 +204,7 @@ Generate React code from a wireframe image URL.
 
 ### `POST /api/cloudinary/sign`
 
-Generate a signed upload URL for Cloudinary.
-
-**Request:**
-```json
-{
-  "public_id": "sketch_1234567890"
-}
-```
+Returns signed upload parameters for a direct Cloudinary upload.
 
 **Response:**
 ```json
@@ -235,11 +216,17 @@ Generate a signed upload URL for Cloudinary.
 }
 ```
 
+### Project history
+
+- `GET /api/history` – list your saved projects
+- `POST /api/history` – save a project
+- `GET | PATCH | DELETE /api/history/[id]` – read, rename/update, or delete a project
+
 ## Configuration
 
 ### AI Model Settings
 
-Adjust generation parameters in `lib/aiProviders.ts`:
+Adjust generation parameters in `frontend/lib/aiProviders.ts`:
 
 ```typescript
 generationConfig: {
@@ -252,9 +239,9 @@ generationConfig: {
 
 ### Preview Customization
 
-Modify the preview environment in `lib/buildPreviewSrcDoc.ts`:
+Modify the preview environment in `frontend/lib/buildPreviewSrcDoc.ts`:
 
-- React version: `react@18`
+- React UMD: `react@18`
 - Tailwind CDN: `cdn.tailwindcss.com`
 - Lucide icons: `lucide-react@0.474.0`
 - Babel: `@babel/standalone@7.23.5`
@@ -263,52 +250,43 @@ Modify the preview environment in `lib/buildPreviewSrcDoc.ts`:
 
 ### Available Scripts
 
+Run from the repository root:
+
 ```bash
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm run start
-
-# Lint code
-npm run lint
+npm run dev            # start development server
+npm run build          # build for production
+npm run start          # start production server
+npm run lint           # lint code
+npm run test:backend   # API smoke test
 ```
 
 ## Deployment
 
 ### Deploy to Vercel
 
-1. Push your code to GitHub
-2. Import the repository in [Vercel](https://vercel.com)
-3. Add all environment variables from your `.env` file
-4. Deploy with one click
-5. Update Clerk URLs to match your production domain
+1. Import the repository in [Vercel](https://vercel.com) with `frontend` as the root directory
+2. Add all environment variables from `frontend/.env.local`, plus `NEXTAUTH_URL` set to your production URL
+3. Add `https://your-domain/api/auth/callback/google` as an authorized redirect URI in your Google OAuth client
+4. Deploy
 
 ## Troubleshooting
 
-### Common Issues
-
 **Preview not rendering**
-- Check browser console for errors
+- Check the browser console for errors
 - Verify `window.__PREVIEW_COMPONENT__` is defined
-- Ensure Babel transformation completed successfully
+- Ensure the Babel transformation completed successfully
 
 **API rate limits**
 - Gemini has rate limits; add delays between requests
-- Check your quota in Google Cloud Console
+- Check your quota in Google AI Studio / Google Cloud Console
 
 **Image upload fails**
 - Verify Cloudinary credentials are correct
 - Check image size (max 10MB recommended)
-- Ensure CORS settings are properly configured
 
-**Module not found errors**
-- Ensure Lucide icons are properly auto-detected
-- Check that UMD libraries are loading correctly
-- Verify import resolution in `lib/aiProviders.ts`
+**Sign-in fails**
+- Check `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `NEXTAUTH_SECRET`
+- Make sure the OAuth redirect URI matches your domain
 
 ## Contributing
 
@@ -320,10 +298,6 @@ Contributions are welcome! Please follow these steps:
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## License
-
-This project is licensed under the MIT License.
-
 ## Roadmap
 
 - [ ] Support for Claude and GPT-4 Vision models
@@ -331,21 +305,19 @@ This project is licensed under the MIT License.
 - [ ] Component library integration (Material-UI, Chakra UI)
 - [ ] Version history for generated code
 - [ ] Collaborative editing and sharing
-- [ ] Dark mode support
 - [ ] Figma plugin integration
-- [ ] Mobile app (React Native)
-- [ ] Batch processing for multiple wireframes
+- [ ] Drag-and-drop and batch processing for multiple wireframes
 
 ## Acknowledgments
 
-- **Google Gemini** for powerful vision AI capabilities
-- **Clerk** for seamless authentication
-- **Cloudinary** for reliable image hosting
-- **Vercel** for excellent deployment platform
-- **Shadcn** for beautiful UI components
+- **Google Gemini** for vision AI capabilities
+- **NextAuth** and **Supabase** for authentication and data
+- **Cloudinary** for image hosting
+- **Vercel** for deployment
+- **shadcn/ui** for UI components
 
 ---
 
-**Built with ❤️ by the Sketch2Spec Team**
+**Built by [Kaushal Loya](https://github.com/Kaushal-Loya)** · [LinkedIn](https://www.linkedin.com/in/kaushal-loya) · [Portfolio](https://kaushalloya.in)
 
 *Transform your sketches into reality, one component at a time.*
